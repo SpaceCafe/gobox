@@ -24,7 +24,7 @@ jobs:
 
       - name: Collect go modules
         id: set-matrix
-        run: echo "matrix="$(go list -m -json | jq -cs .)"" >> $GITHUB_OUTPUT
+        run: echo "matrix="$(go list -m -json | jq -cs '[.[].Dir]')"" >> $GITHUB_OUTPUT
   govulncheck:
     needs: list-modules
     runs-on: ubuntu-latest
@@ -42,7 +42,7 @@ jobs:
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1
         with:
-          go-package: ${{ matrix.Path }}
+          go-package: ${{ matrix }}
 
   golangci:
     needs: list-modules
@@ -62,7 +62,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          working-directory: ${{ matrix.Dir }}
+          args: "${{ matrix }}"
 
   staticcheck:
     needs: list-modules
@@ -81,7 +81,7 @@ jobs:
       - name: Run staticcheck
         uses: dominikh/staticcheck-action@v1.3.0
         with:
-          working-directory: ${{ matrix.Dir }}
+          working-directory: ${{ matrix }}
 
   go-test:
     needs: list-modules
@@ -98,5 +98,5 @@ jobs:
           go-version: '1.21'
 
       - name: Test
-        run: go test -v ${{ matrix.Path }}
+        run: go test -v "${{ matrix }}"
 ...
