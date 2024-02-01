@@ -24,8 +24,7 @@ jobs:
 
       - name: Collect go modules
         id: set-matrix
-        run: echo "::set-output name=matrix::$(go list -m -json | jq -s .)"
-
+        run: echo "matrix="$(go list -m -json | jq -cs .)"" >> $GITHUB_OUTPUT
   govulncheck:
     needs: list-modules
     runs-on: ubuntu-latest
