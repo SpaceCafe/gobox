@@ -24,7 +24,7 @@ jobs:
 
       - name: Collect go modules
         id: set-matrix
-        run: go list -m -json | jq -s .
+        run: echo "::set-output name=matrix::$(go list -m -json | jq -s .)"
 
   govulncheck:
     needs: list-modules
