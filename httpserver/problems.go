@@ -1,0 +1,92 @@
+package httpserver
+
+import (
+	"net/http"
+)
+
+var (
+	ProblemUnauthorized = NewProblem(
+		"",
+		http.StatusText(http.StatusUnauthorized),
+		http.StatusUnauthorized,
+		"The request does not contains any valid authentication data.",
+	)
+	ProblemInternalError = NewProblem(
+		"",
+		http.StatusText(http.StatusInternalServerError),
+		http.StatusInternalServerError,
+		"An internal error occurred. Please, try again later.",
+	)
+	ProblemMethodNotAllowed = NewProblem(
+		"",
+		http.StatusText(http.StatusMethodNotAllowed),
+		http.StatusMethodNotAllowed,
+		"The specified method is not allowed against this resource.",
+	)
+	ProblemUnsupportedMediaType = NewProblem(
+		"",
+		http.StatusText(http.StatusUnsupportedMediaType),
+		http.StatusUnsupportedMediaType,
+		"The specified media type is not allowed against this resource.",
+	)
+	ProblemBadRequest = NewProblem(
+		"",
+		http.StatusText(http.StatusBadRequest),
+		http.StatusBadRequest,
+		"The received content is not valid for this resource.",
+	)
+	ProblemNoSuchAccessPoint = NewProblem(
+		"",
+		"No such access point",
+		http.StatusNotFound,
+		"The specified access point does not exist.",
+	)
+	ProblemSignatureDoesNotMatch = NewProblem(
+		"",
+		"Signature does not match",
+		http.StatusBadRequest,
+		"The request signature that the server calculated does not match the signature that you provided.",
+	)
+	ProblemNoSuchKey = NewProblem(
+		"",
+		"No such key",
+		http.StatusNotFound,
+		"The specified key does not exist.",
+	)
+	ProblemInvalidFilterKey = NewProblem(
+		"",
+		"Invalid filter key",
+		http.StatusBadRequest,
+		"The specified key cannot be used to filter.",
+	)
+	ProblemCSRFMalfunction = NewProblem(
+		"",
+		"CSRF malfunction",
+		http.StatusInternalServerError,
+		"The server could not create a CSRF token.",
+	)
+	ProblemCSRFInvalid = NewProblem(
+		"",
+		"CSRF invalid",
+		http.StatusForbidden,
+		"The provided CSRF token is malformed or otherwise not valid.",
+	)
+	ProblemJWTMissing = NewProblem(
+		"",
+		"JWT missing",
+		http.StatusUnauthorized,
+		"The JSON Web Token (JWT) is missing.",
+	)
+	ProblemJWTInvalid = NewProblem(
+		"",
+		"JWT invalid",
+		http.StatusForbidden,
+		"The provided JSON Web Token (JWT) is malformed or otherwise not valid.",
+	)
+	ProblemInsufficientPermission = NewProblem(
+		"",
+		"Insufficient permission",
+		http.StatusForbidden,
+		"Insufficient permission",
+	)
+)
