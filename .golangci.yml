@@ -1,0 +1,56 @@
+linters-settings:
+  depguard:
+    rules:
+      main:
+        list-mode: strict
+        files:
+          - $all
+          - "!$test"
+        allow:
+          - $gostd
+          - github.com/gin-gonic/gin
+          - github.com/spacecafe
+      tests:
+        list-mode: strict
+        files:
+          - "$test"
+        allow:
+          - $gostd
+          - github.com/gin-gonic/gin
+          - github.com/stretchr/testify
+
+linters:
+  enable:
+    - bodyclose
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - errorlint
+    - exportloopref
+    - funlen
+    - gocheckcompilerdirectives
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - revive
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace

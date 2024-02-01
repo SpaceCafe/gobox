@@ -1,0 +1,32 @@
+---
+name: staticcheck
+
+'on':
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  gosec:
+    needs: go-modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        manifest: ${{ fromJson(needs.go-modules.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: false
+
+      - name: Run staticcheck
+        uses: dominikh/staticcheck-action@v1.3.0
+        with:
+          working-directory: ${{ matrix.Dir }}
+...
