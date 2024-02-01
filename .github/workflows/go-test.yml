@@ -24,13 +24,13 @@ jobs:
 
       - name: Collect go modules
         id: set-matrix
-        run: echo "matrix="$(go list -m -json | jq -cs '[.[].Dir]')"" >> $GITHUB_OUTPUT
+        run: echo "matrix="$(go list -m -json | jq -cs .)"" >> $GITHUB_OUTPUT
   govulncheck:
     needs: list-modules
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        manifest: ${{ fromJson(needs.list-modules.outputs.matrix) }}
+        module: ${{ fromJson(needs.list-modules.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,14 +42,14 @@ jobs:
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1
         with:
-          go-package: ${{ matrix }}
+          go-package: ${{ matrix.module.Path }}
 
   golangci:
     needs: list-modules
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        manifest: ${{ fromJson(needs.list-modules.outputs.matrix) }}
+        module: ${{ fromJson(needs.list-modules.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -62,14 +62,14 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          args: "${{ matrix }}"
+          working-directory: ${{ matrix.module.Dir }}
 
   staticcheck:
     needs: list-modules
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        manifest: ${{ fromJson(needs.list-modules.outputs.matrix) }}
+        module: ${{ fromJson(needs.list-modules.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -81,14 +81,14 @@ jobs:
       - name: Run staticcheck
         uses: dominikh/staticcheck-action@v1.3.0
         with:
-          working-directory: ${{ matrix }}
+          working-directory: ${{ matrix.module.Dir }}
 
   go-test:
     needs: list-modules
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        manifest: ${{ fromJson(needs.list-modules.outputs.matrix) }}
+        module: ${{ fromJson(needs.list-modules.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -98,5 +98,5 @@ jobs:
           go-version: '1.21'
 
       - name: Test
-        run: go test -v "${{ matrix }}"
+        run: go test -v ${{ matrix.module.Path }}
 ...
