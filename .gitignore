@@ -2,7 +2,7 @@
 ## gitignore configuration file
 ##
 ## @author     Lars Thoms <lars@thoms.io>
-## @date       2023-10-09
+## @date       2024-02-01
 ##------------------------------------------------------------------------------
 
 ##------------------------------------------------------------------------------
@@ -128,6 +128,3 @@ $RECYCLE.BIN/
 
 # Dependency directories
 vendor/
-
-# Go workspace file
-go.work
