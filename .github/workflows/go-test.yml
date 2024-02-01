@@ -9,20 +9,97 @@ name: go-test
     branches:
       - main
 
+env:
+  GO_VERSION: '1.21'
+
 jobs:
-  gosec:
-    needs: go-modules
+  list-modules:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        manifest: ${{ fromJson(needs.go-modules.outputs.matrix) }}
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: $GO_VERSION
+
+      - name: Collect go modules
+        id: set-matrix
+        run: go list -m -json
+
+  govulncheck:
+    needs: list-modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        manifest: ${{ fromJson(needs.list-modules.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: $GO_VERSION
+
+      - name: Run govulncheck
+        uses: golang/govulncheck-action@v1
+        with:
+          go-package: ${{ matrix.Path }}
+
+  golangci:
+    needs: list-modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        manifest: ${{ fromJson(needs.list-modules.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: $GO_VERSION
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: ${{ matrix.Dir }}
+
+  staticcheck:
+    needs: list-modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        manifest: ${{ fromJson(needs.list-modules.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: $GO_VERSION
+
+      - name: Run staticcheck
+        uses: dominikh/staticcheck-action@v1.3.0
+        with:
+          working-directory: ${{ matrix.Dir }}
+
+  go-test:
+    needs: list-modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        manifest: ${{ fromJson(needs.list-modules.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: $GO_VERSION
 
       - name: Test
         run: go test -v ${{ matrix.Path }}
