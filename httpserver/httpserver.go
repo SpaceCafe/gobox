@@ -37,13 +37,10 @@ func NewHTTPServer(config *Config) (httpServer *HTTPServer) {
 			ReadTimeout:       config.ReadTimeout,
 			ReadHeaderTimeout: config.ReadHeaderTimeout,
 		},
-
-		// Initializes a new Gin engine for handling HTTP requests and responses.
-		Engine: gin.Default(),
 	}
 
-	// Set Gin engine as HTTP server handler.
-	httpServer.server.Handler = httpServer.Engine
+	// Initializes a new Gin engine for handling HTTP requests and responses.
+	httpServer.SetEngine(gin.Default())
 
 	// Enables the server to handle 'Method Not Allowed' errors by returning 405 status code.
 	httpServer.Engine.HandleMethodNotAllowed = true
@@ -55,6 +52,11 @@ func NewHTTPServer(config *Config) (httpServer *HTTPServer) {
 	httpServer.Engine.NoRoute(ProblemNoSuchAccessPoint.Abort)
 
 	return
+}
+
+func (r *HTTPServer) SetEngine(engine *gin.Engine) {
+	r.Engine = engine
+	r.server.Handler = engine
 }
 
 // Start function starts the HTTP server in a separate goroutine.
@@ -78,8 +80,6 @@ func (r *HTTPServer) Start() {
 		switch {
 		case errors.Is(err, http.ErrServerClosed):
 			logger.Info(err)
-		case err == nil:
-			logger.Info("http server was stopped")
 		default:
 			logger.Fatal(err)
 		}

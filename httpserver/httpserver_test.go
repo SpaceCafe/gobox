@@ -110,5 +110,6 @@ func TestNewHTTPServer(t *testing.T) {
 		assert.Equal(t, config, server.config)
 		assert.NotNil(t, server.server)
 		assert.NotNil(t, server.Engine)
+		assert.Equal(t, server.Engine, server.server.Handler)
 	})
 }
