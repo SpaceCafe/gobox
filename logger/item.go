@@ -86,13 +86,13 @@ func (r *Item) String() string {
 	}
 	buf += r.Date.Format(dateFormat) + " " + r.File + ":" + strconv.Itoa(r.Line) + ": "
 
-	switch r.Message.(type) {
+	switch msg := r.Message.(type) {
 	case nil:
 		break
 	case string:
-		buf += r.Message.(string)
+		buf += msg
 	default:
-		buf += fmt.Sprintf("%v", r.Message)
+		buf += fmt.Sprintf("%v", msg)
 	}
 
 	return buf
