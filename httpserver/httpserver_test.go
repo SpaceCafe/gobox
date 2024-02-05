@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spacecafe/gobox/logger"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,6 +25,7 @@ func TestHTTPServer_Start(t *testing.T) {
 			ReadTimeout:       30 * time.Second,
 			ReadHeaderTimeout: 10 * time.Second,
 			Port:              8888,
+			Logger:            logger.Default(),
 		}},
 		{"starts HTTPServer with TLS", "https", &Config{
 			Host:              "127.0.0.1",
@@ -32,6 +34,7 @@ func TestHTTPServer_Start(t *testing.T) {
 			ReadTimeout:       30 * time.Second,
 			ReadHeaderTimeout: 10 * time.Second,
 			Port:              8888,
+			Logger:            logger.Default(),
 		}},
 	}
 	for _, tt := range tests {
@@ -72,7 +75,7 @@ func TestHTTPServer_Start(t *testing.T) {
 
 func TestHTTPServer_Stop(t *testing.T) {
 	t.Run("stops HTTPServer", func(t *testing.T) {
-		config := NewConfig()
+		config := NewConfig(nil)
 		config.Host = "127.0.0.1"
 		config.Port = 8888
 
@@ -102,7 +105,7 @@ func TestHTTPServer_Stop(t *testing.T) {
 
 func TestNewHTTPServer(t *testing.T) {
 	t.Run("creates new HTTPServer", func(t *testing.T) {
-		config := NewConfig()
+		config := NewConfig(nil)
 
 		server := NewHTTPServer(config)
 

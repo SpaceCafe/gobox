@@ -5,6 +5,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/spacecafe/gobox/logger"
 )
 
 const (
@@ -24,6 +26,7 @@ var (
 	ErrInvalidReadTimeout       = errors.New("read_timeout must be greater than 0")
 	ErrInvalidReadHeaderTimeout = errors.New("read_header_timeout must be greater than 0")
 	ErrInvalidPort              = errors.New("port must be a number between 1 and 65535")
+	ErrNoLogger                 = errors.New("logger cannot be empty")
 )
 
 // Config defines the essential parameters for serving a Lambda broker service.
@@ -49,56 +52,70 @@ type Config struct {
 
 	// Port specifies the port to be used for connections.
 	Port int `json:"port" yaml:"port" mapstructure:"port"`
+
+	// Logger specifies the used logger instance.
+	Logger *logger.Logger
 }
 
 // NewConfig creates and returns a new Config having default values.
-func NewConfig() *Config {
-	return &Config{
+func NewConfig(log *logger.Logger) *Config {
+	c := &Config{
 		Host:              DefaultHost,
 		BasePath:          DefaultBasePath,
 		ReadTimeout:       DefaultReadTimeout,
 		ReadHeaderTimeout: DefaultReadHeaderTimeout,
 		Port:              DefaultPort,
 	}
+
+	if log != nil {
+		c.Logger = log
+	} else {
+		c.Logger = logger.Default()
+	}
+
+	return c
 }
 
 // Validate ensures the all necessary configurations are filled and within valid confines.
 // This includes checks for host, certificates, port, and timeouts.
 // Any misconfiguration results in well-defined standardized errors.
-func (m *Config) Validate() error {
-	if m.Host == "" {
+func (r *Config) Validate() error {
+	if r.Host == "" {
 		return ErrNoHost
 	}
 
-	if !path.IsAbs(m.BasePath) {
+	if !path.IsAbs(r.BasePath) {
 		return ErrNoBasePath
 	}
 
-	if !strings.HasSuffix(m.BasePath, "/") {
+	if !strings.HasSuffix(r.BasePath, "/") {
 		return ErrInvalidBasePath
 	}
 
-	if m.CertFile != "" || m.KeyFile != "" {
-		if m.CertFile == "" {
+	if r.CertFile != "" || r.KeyFile != "" {
+		if r.CertFile == "" {
 			return ErrNoCertFile
 		}
 
-		if m.KeyFile == "" {
+		if r.KeyFile == "" {
 			return ErrNoKeyFile
 		}
 	}
 
-	if m.ReadTimeout <= 0 {
+	if r.ReadTimeout <= 0 {
 		return ErrInvalidReadTimeout
 	}
 
-	if m.ReadHeaderTimeout <= 0 {
+	if r.ReadHeaderTimeout <= 0 {
 		return ErrInvalidReadHeaderTimeout
 	}
 
-	if m.Port <= 0 || m.Port > 65535 {
+	if r.Port <= 0 || r.Port > 65535 {
 		return ErrInvalidPort
 	}
 
+	if r.Logger == nil {
+		return ErrNoLogger
+	}
 	return nil
 }

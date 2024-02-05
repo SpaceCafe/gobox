@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spacecafe/logger"
 )
 
 // HTTPServer encapsulates an HTTP server with some additional features.
@@ -40,7 +39,9 @@ func NewHTTPServer(config *Config) (httpServer *HTTPServer) {
 	}
 
 	// Initializes a new Gin engine for handling HTTP requests and responses.
-	httpServer.SetEngine(gin.Default())
+	engine := gin.New()
+	engine.Use(Logger(config.Logger), gin.Recovery())
+	httpServer.SetEngine(engine)
 
 	// Enables the server to handle 'Method Not Allowed' errors by returning 405 status code.
 	httpServer.Engine.HandleMethodNotAllowed = true
@@ -61,7 +62,7 @@ func (r *HTTPServer) SetEngine(engine *gin.Engine) {
 
 // Start function starts the HTTP server in a separate goroutine.
 func (r *HTTPServer) Start() {
-	logger.Infof("starting web server and listen to %s", r.server.Addr)
+	r.config.Logger.Infof("starting web server and listen to %s", r.server.Addr)
 
 	go func() {
 		var err error
@@ -79,9 +80,9 @@ func (r *HTTPServer) Start() {
 
 		switch {
 		case errors.Is(err, http.ErrServerClosed):
-			logger.Info(err)
+			r.config.Logger.Info(err)
 		default:
-			logger.Fatal(err)
+			r.config.Logger.Fatal(err)
 		}
 	}()
 }
@@ -91,9 +92,9 @@ func (r *HTTPServer) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	logger.Infof("stopping http server at '%s'", r.server.Addr)
+	r.config.Logger.Infof("stopping http server at '%s'", r.server.Addr)
 
 	if err := r.server.Shutdown(ctx); err != nil {
-		logger.Warnf("shutdown of http server was unsuccessful: %s", err)
+		r.config.Logger.Warnf("shutdown of http server was unsuccessful: %s", err)
 	}
 }
