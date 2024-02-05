@@ -1,11 +1,21 @@
 package logger
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+type message struct {
+	Text   string `json:"text"`
+	Number int    `json:"number"`
+}
+
+func (r message) String() string {
+	return r.Text + strconv.Itoa(r.Number)
+}
 
 func TestItem_Marshal(t *testing.T) {
 	date, _ := time.Parse("2006/01/02 15:04:05", "2024/02/05 09:15:30")
@@ -14,7 +24,7 @@ func TestItem_Marshal(t *testing.T) {
 		Date    time.Time
 		File    string
 		Level   string
-		Message string
+		Message any
 		Line    int
 	}
 	tests := []struct {
@@ -22,16 +32,23 @@ func TestItem_Marshal(t *testing.T) {
 		fields fields
 		want   string
 	}{
-		{"Test1", fields{
+		{"full string", fields{
 			Date:    date,
 			File:    "example.go",
 			Level:   "debug",
 			Message: "Test message",
 			Line:    123,
 		}, "{\"date\":\"2024-02-05T09:15:30Z\", \"file\":\"example.go\", \"level\":\"debug\", \"message\":\"Test message\", \"line\":123}"},
-		{"Test2", fields{
+		{"minimal string", fields{
 			Date: date,
 		}, "{\"date\":\"2024-02-05T09:15:30Z\", \"file\":\"\", \"level\":\"\", \"message\":\"\", \"line\":0}"},
+		{"minimal json", fields{
+			Date: date,
+			Message: message{
+				Text:   "Test message",
+				Number: 123456,
+			},
+		}, "{\"date\":\"2024-02-05T09:15:30Z\", \"file\":\"\", \"level\":\"\", \"message\":{\"text\":\"Test message\", \"number\":123456}, \"line\":0}"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -58,7 +75,7 @@ func TestItem_String(t *testing.T) {
 	type fields struct {
 		Date    time.Time
 		File    string
-		Message string
+		Message any
 		Line    int
 		level   Level
 	}
@@ -67,16 +84,23 @@ func TestItem_String(t *testing.T) {
 		fields fields
 		want   string
 	}{
-		{"Test1", fields{
+		{"full text", fields{
 			Date:    date,
 			File:    "example.go",
 			Message: "Test message",
 			Line:    123,
 			level:   DebugLevel,
 		}, "[DEBUG]   2024/02/05 09:15:30 example.go:123: Test message"},
-		{"Test2", fields{
+		{"minimal text", fields{
 			Date: date,
 		}, "[DEBUG]   2024/02/05 09:15:30 :0: "},
+		{"minimal json", fields{
+			Date: date,
+			Message: message{
+				Text:   "Test message",
+				Number: 123456,
+			},
+		}, "[DEBUG]   2024/02/05 09:15:30 :0: Test message123456"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

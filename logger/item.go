@@ -29,7 +29,7 @@ var (
 	}
 )
 
-// Item represents a log item with date, file name, line number, level, and message.
+// Item represents a log item with date, file name, line number, level, and Message.
 type Item struct {
 	// Date is the timestamp of the log.
 	Date time.Time `json:"date"`
@@ -41,7 +41,8 @@ type Item struct {
 	Level string `json:"level"`
 
 	// Message contains the log entry.
-	Message string `json:"message"`
+	// It could be a string or a fmt.Stringer interface with json annotations.
+	Message any `json:"message"`
 
 	// Line contains the corresponding line number where the log was created.
 	Line int `json:"line"`
@@ -51,7 +52,7 @@ type Item struct {
 }
 
 // NewItem creates a new Item with the given parameters and current time.
-func NewItem(level Level, file string, line int, message string) *Item {
+func NewItem(level Level, file string, line int, message any) *Item {
 	return &Item{
 		Date:    time.Now(),
 		File:    file,
@@ -65,6 +66,10 @@ func NewItem(level Level, file string, line int, message string) *Item {
 // Marshal converts an Item to a JSON byte array and returns it.
 // If there's an error during conversion, it wraps the error.
 func (r *Item) Marshal() ([]byte, error) {
+	if r.Message == nil {
+		r.Message = ""
+	}
+
 	out, err := json.Marshal(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal Item: %w", err)
@@ -79,6 +84,16 @@ func (r *Item) String() string {
 	for i := 0; i <= prefixMaxLen-len(prefix[r.level]); i++ {
 		buf += " "
 	}
-	buf += r.Date.Format(dateFormat) + " " + r.File + ":" + strconv.Itoa(r.Line) + ": " + r.Message
+	buf += r.Date.Format(dateFormat) + " " + r.File + ":" + strconv.Itoa(r.Line) + ": "
+
+	switch r.Message.(type) {
+	case nil:
+		break
+	case string:
+		buf += r.Message.(string)
+	default:
+		buf += fmt.Sprintf("%v", r.Message)
+	}
+
 	return buf
 }

@@ -114,7 +114,11 @@ func (r *Logger) Output(level Level, calldepth int, format *string, v ...any) {
 	// Create a new Item with the given level, filename, line number, and message.
 	// If format is nil, use fmt.Sprint to create the log message; otherwise, use fmt.Sprintf with the provided format string.
 	if format == nil {
-		l = NewItem(level, file, line, fmt.Sprint(v...))
+		if len(v) == 1 {
+			l = NewItem(level, file, line, v[0])
+		} else {
+			l = NewItem(level, file, line, fmt.Sprint(v...))
+		}
 	} else {
 		l = NewItem(level, file, line, fmt.Sprintf(*format, v...))
 	}
