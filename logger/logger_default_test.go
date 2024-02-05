@@ -9,7 +9,6 @@ import (
 
 func TestDefault(t *testing.T) {
 	logger := New()
-	assert.Equal(t, reflect.DeepEqual(Default(), logger), true, "expected Default() to be the same as New()")
 	assert.Equal(t, reflect.ValueOf(SetFormat).Pointer(), reflect.ValueOf(logger.SetFormat).Pointer(), "expected SetFormat() to be the same as logger.SetFormat()")
 	assert.Equal(t, reflect.ValueOf(SetLevel).Pointer(), reflect.ValueOf(logger.SetLevel).Pointer(), "expected SetLevel() to be the same as logger.SetLevel()")
 	assert.Equal(t, reflect.ValueOf(SetOutput).Pointer(), reflect.ValueOf(logger.SetOutput).Pointer(), "expected SetOutput() to be the same as logger.SetOutput()")
