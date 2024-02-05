@@ -1,4 +1,4 @@
-module logger
+module github.com/spacecafe/gobox/logger
 
 go 1.21
 
