@@ -1,4 +1,4 @@
-package httpmiddleware
+package httpserver
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spacecafe/gobox/httpserver"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -116,10 +115,10 @@ func TestAuthentication(t *testing.T) {
 		},
 	}
 
-	config := httpserver.NewConfig()
+	config := NewConfig(nil)
 	config.Host = "127.0.0.1"
 	config.Port = 8888
-	server := httpserver.NewHTTPServer(config)
+	server := NewHTTPServer(config)
 	server.Start()
 	time.Sleep(100 * time.Millisecond)
 	defer server.Stop()

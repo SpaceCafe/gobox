@@ -1,4 +1,4 @@
-package httpmiddleware
+package httpserver
 
 import (
 	"crypto/subtle"
@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spacecafe/gobox/httpserver"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -69,7 +68,7 @@ func Authentication(config *AuthenticationConfig) gin.HandlerFunc {
 		// If password doesn't match or not provided at all, send a "401 Unauthorized" response with
 		// "WWW-Authenticate" header to request client for valid credentials.
 		ctx.Header("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
-		httpserver.ProblemUnauthorized.Abort(ctx)
+		ProblemUnauthorized.Abort(ctx)
 	}
 }
 

@@ -1,4 +1,4 @@
-package httpmiddleware
+package httpserver
 
 import "errors"
 
