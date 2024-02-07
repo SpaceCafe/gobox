@@ -1,4 +1,4 @@
-package httpserver
+package authentication
 
 import (
 	"crypto/subtle"
@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	problems "github.com/spacecafe/gobox/gin-problems"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -32,10 +33,10 @@ var (
 	}
 )
 
-// Authentication is a middleware function that handles HTTP Basic Auth, Bearer tokens and API Key header.
+// New is a middleware function that handles HTTP Basic Auth, Bearer tokens and API Key header.
 // If Basic Auth failed or not provided, it tries to get API key from the headers "API-Key" and "X-API-Key".
 // The username in Basic Auth is ignored, but must contain at least one character.
-func Authentication(config *AuthenticationConfig) gin.HandlerFunc {
+func New(config *Config) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authenticated := false
 
@@ -68,7 +69,8 @@ func Authentication(config *AuthenticationConfig) gin.HandlerFunc {
 		// If password doesn't match or not provided at all, send a "401 Unauthorized" response with
 		// "WWW-Authenticate" header to request client for valid credentials.
 		ctx.Header("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
-		ProblemUnauthorized.Abort(ctx)
+		_ = ctx.Error(problems.ProblemUnauthorized)
+		ctx.Abort()
 	}
 }
 

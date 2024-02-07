@@ -1,4 +1,4 @@
-package httpserver
+package authentication
 
 import "errors"
 
@@ -6,8 +6,8 @@ var (
 	ErrNoPassword = errors.New("password of a user cannot be empty")
 )
 
-// AuthenticationConfig holds configuration related to user and API key authentication.
-type AuthenticationConfig struct {
+// Config holds configuration related to user and API key authentication.
+type Config struct {
 
 	// APIKeys list representing API keys that can be used to authenticate requests.
 	APIKeys []string `json:"api_keys" yaml:"api_keys" mapstructure:"api_keys"`
@@ -25,14 +25,14 @@ type AuthenticationConfig struct {
 	Users map[string]string `json:"users" yaml:"users" mapstructure:"users"`
 }
 
-// NewAuthenticationConfig creates and returns a new AuthenticationConfig having default values.
-func NewAuthenticationConfig() *AuthenticationConfig {
-	return &AuthenticationConfig{HeaderName: "API-Key"}
+// NewConfig creates and returns a new Config having default values.
+func NewConfig() *Config {
+	return &Config{HeaderName: "API-Key"}
 }
 
 // Validate ensures the all necessary configurations are filled and within valid confines.
 // Any misconfiguration results in well-defined standardized errors.
-func (r *AuthenticationConfig) Validate() error {
+func (r *Config) Validate() error {
 	for i := range r.Users {
 		if len(r.Users[i]) == 0 {
 			return ErrNoPassword

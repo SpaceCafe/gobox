@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	problems "github.com/spacecafe/gobox/gin-problems"
 )
 
 // HTTPServer encapsulates an HTTP server with some additional features.
@@ -41,16 +42,23 @@ func NewHTTPServer(config *Config) (httpServer *HTTPServer) {
 	// Initializes a new Gin engine for handling HTTP requests and responses.
 	engine := gin.New()
 	engine.Use(Logger(config.Logger), gin.Recovery())
+	engine.Use(problems.New())
 	httpServer.SetEngine(engine)
 
 	// Enables the server to handle 'Method Not Allowed' errors by returning 405 status code.
 	httpServer.Engine.HandleMethodNotAllowed = true
 
 	// Registers a handler function that will be called when a request is made with an unsupported HTTP method.
-	httpServer.Engine.NoMethod(ProblemMethodNotAllowed.Abort)
+	httpServer.Engine.NoMethod(func(ctx *gin.Context) {
+		_ = ctx.Error(problems.ProblemMethodNotAllowed)
+		ctx.Abort()
+	})
 
 	// Registers a handler function that will be called when no route matches for the requested path and method.
-	httpServer.Engine.NoRoute(ProblemNoSuchAccessPoint.Abort)
+	httpServer.Engine.NoRoute(func(ctx *gin.Context) {
+		_ = ctx.Error(problems.ProblemNoSuchAccessPoint)
+		ctx.Abort()
+	})
 
 	return
 }

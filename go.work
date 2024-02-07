@@ -1,6 +1,7 @@
-go 1.21
+go 1.22
 
 use (
+	./gin-authentication
 	./gin-problems
 	./httpserver
 	./logger

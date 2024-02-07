@@ -1,20 +1,20 @@
-package httpserver
+package authentication
 
 import (
-	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	problems "github.com/spacecafe/gobox/gin-problems"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func TestAuthentication(t *testing.T) {
+func TestNew(t *testing.T) {
 	type args struct {
-		config   *AuthenticationConfig
+		config   *Config
 		username string
 		password string
 	}
@@ -26,16 +26,16 @@ func TestAuthentication(t *testing.T) {
 		{
 			"basic authentication, same username, same blank password",
 			args{
-				&AuthenticationConfig{Users: map[string]string{"user": "secret"}},
+				&Config{Users: map[string]string{"user": "secret"}},
 				"user",
 				"secret",
 			},
-			http.StatusNotFound,
+			http.StatusOK,
 		},
 		{
 			"basic authentication, different username, same blank password",
 			args{
-				&AuthenticationConfig{Users: map[string]string{"user": "secret"}},
+				&Config{Users: map[string]string{"user": "secret"}},
 				"another user",
 				"secret",
 			},
@@ -44,7 +44,7 @@ func TestAuthentication(t *testing.T) {
 		{
 			"basic authentication, no username, same blank password",
 			args{
-				&AuthenticationConfig{Users: map[string]string{"user": "secret"}},
+				&Config{Users: map[string]string{"user": "secret"}},
 				"",
 				"secret",
 			},
@@ -53,7 +53,7 @@ func TestAuthentication(t *testing.T) {
 		{
 			"basic authentication, no usernames, same blank password",
 			args{
-				&AuthenticationConfig{Users: map[string]string{"": "secret"}},
+				&Config{Users: map[string]string{"": "secret"}},
 				"",
 				"secret",
 			},
@@ -62,7 +62,7 @@ func TestAuthentication(t *testing.T) {
 		{
 			"basic authentication, same username, no passwords",
 			args{
-				&AuthenticationConfig{Users: map[string]string{"user": ""}},
+				&Config{Users: map[string]string{"user": ""}},
 				"user",
 				"",
 			},
@@ -71,25 +71,25 @@ func TestAuthentication(t *testing.T) {
 		{
 			"basic authentication, same username, same bcrypt hashed passwords",
 			args{
-				&AuthenticationConfig{Users: map[string]string{"user": "secret", "another user": string(hashBcryptPassword([]byte("another secret")))}},
+				&Config{Users: map[string]string{"user": "secret", "another user": string(hashBcryptPassword([]byte("another secret")))}},
 				"another user",
 				"another secret",
 			},
-			http.StatusNotFound,
+			http.StatusOK,
 		},
 		{
 			"api-key authentication, same blank password",
 			args{
-				&AuthenticationConfig{APIKeys: []string{"secret", "another secret"}, HeaderName: "API-Key"},
+				&Config{APIKeys: []string{"secret", "another secret"}, HeaderName: "API-Key"},
 				"",
 				"another secret",
 			},
-			http.StatusNotFound,
+			http.StatusOK,
 		},
 		{
 			"api-key authentication, different blank password",
 			args{
-				&AuthenticationConfig{APIKeys: []string{"secret", "another secret"}, HeaderName: "API-Key"},
+				&Config{APIKeys: []string{"secret", "another secret"}, HeaderName: "API-Key"},
 				"",
 				"unknown secret",
 			},
@@ -98,7 +98,7 @@ func TestAuthentication(t *testing.T) {
 		{
 			"api-key authentication, no password",
 			args{
-				&AuthenticationConfig{APIKeys: []string{"secret", "another secret"}, HeaderName: "API-Key"},
+				&Config{APIKeys: []string{"secret", "another secret"}, HeaderName: "API-Key"},
 				"",
 				"",
 			},
@@ -107,50 +107,42 @@ func TestAuthentication(t *testing.T) {
 		{
 			"api-key authentication, same bcrypt hashed passwords",
 			args{
-				&AuthenticationConfig{APIKeys: []string{"secret", string(hashBcryptPassword([]byte("another secret")))}, HeaderName: "API-Key"},
+				&Config{APIKeys: []string{"secret", string(hashBcryptPassword([]byte("another secret")))}, HeaderName: "API-Key"},
 				"",
 				"another secret",
 			},
-			http.StatusNotFound,
+			http.StatusOK,
 		},
 	}
 
-	config := NewConfig(nil)
-	config.Host = "127.0.0.1"
-	config.Port = 8888
-	server := NewHTTPServer(config)
-	server.Start()
-	time.Sleep(100 * time.Millisecond)
-	defer server.Stop()
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := gin.Default()
-			handler.Use(Authentication(tt.args.config))
-			server.SetEngine(handler)
+			r := gin.Default()
+			r.Use(problems.New())
+			r.Use(New(tt.args.config))
+			r.GET("/test", func(c *gin.Context) {
+				c.JSON(http.StatusOK, struct {
+					Text string `json:"text"`
+				}{"This is a test"})
+			})
 
-			// Try to access the server after stopping
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-			req, err := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:8888", nil)
-			assert.NoError(t, err)
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequest("GET", "/test", nil)
 
 			// Set basic authentication, if username is set.
 			if len(tt.args.username) > 0 {
-				req.SetBasicAuth(tt.args.username, tt.args.password)
+				request.SetBasicAuth(tt.args.username, tt.args.password)
 			}
 
 			// Set api-key authentication, if HeaderName is set.
 			if len(tt.args.config.HeaderName) > 0 {
-				req.Header.Set(tt.args.config.HeaderName, tt.args.password)
+				request.Header.Set(tt.args.config.HeaderName, tt.args.password)
 			}
 
-			resp, err := http.DefaultClient.Do(req)
-			assert.NoError(t, err)
-			if resp != nil {
-				resp.Body.Close()
-			}
-			assert.Equal(t, tt.want, resp.StatusCode)
+			r.ServeHTTP(recorder, request)
+			response := recorder.Result()
+			_ = response.Body.Close()
+			assert.Equal(t, tt.want, response.StatusCode)
 		})
 	}
 }
