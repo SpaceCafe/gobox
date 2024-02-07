@@ -1,4 +1,4 @@
-package httpserver
+package problems
 
 import (
 	"net/http"

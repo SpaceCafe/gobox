@@ -1,12 +1,17 @@
-package httpserver
+package problems
 
 import (
 	"net/http"
 	"strings"
 	"unicode"
-
-	"github.com/gin-gonic/gin"
 )
+
+type IProblem interface {
+	Error() string
+	WithError(error) *Problem
+	setError(error)
+	setInstance(string)
+}
 
 // Problem is used for a standardised error handling for the REST API that the IETF
 // has worked out in [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807).
@@ -77,36 +82,27 @@ func NewProblem(problemType string, title string, status int, detail string) *Pr
 	return p
 }
 
-// setError appends the human-readable error message to the detail field of the problem.
+// NewProblemWithError creates a new instance of Problem and set its error field using an existing error.
+func NewProblemWithError(problemType string, title string, status int, detail string, err error) *Problem {
+	p := NewProblem(problemType, title, status, detail)
+	p.setError(err)
+	return p
+}
+
+// Error returns a formatted error message for the Problem struct type.
+func (r *Problem) Error() string {
+	return r.Title + ": " + r.Detail
+}
+
+func (r *Problem) WithError(err error) *Problem {
+	p := *r
+	p.setError(err)
+	return &p
+}
+
+// SetError appends the human-readable error message to the detail field of the problem.
 func (r *Problem) setError(err error) {
 	if err != nil {
 		r.Detail = r.Detail + "\n\nReason: " + err.Error()
 	}
-}
-
-// setInstance sets the request path to the instance field of the problem.
-func (r *Problem) setInstance(ctx *gin.Context) {
-	if len(r.Instance) == 0 {
-		r.Instance = ctx.Request.URL.Path
-	}
-}
-
-func (r *Problem) sendResponse(ctx *gin.Context) {
-	ctx.Writer.Header().Set("Content-Type", "application/problem+json")
-	ctx.AbortWithStatusJSON(r.Status, r)
-}
-
-// Abort sets the correct content type and a JSON formatted problem response.
-// If not set, the instance field is filled automatically.
-func (r *Problem) Abort(ctx *gin.Context) {
-	problem := *r
-	problem.setInstance(ctx)
-	problem.sendResponse(ctx)
-}
-
-// AbortWithError is a wrapper that calls setError and Abort.
-func (r *Problem) AbortWithError(err error, ctx *gin.Context) {
-	problem := *r
-	problem.setError(err)
-	problem.Abort(ctx)
 }
