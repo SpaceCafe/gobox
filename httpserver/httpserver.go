@@ -26,8 +26,8 @@ type HTTPServer struct {
 }
 
 // NewHTTPServer creates a new instance of HTTPServer with given configuration.
-func NewHTTPServer(config *Config) (httpServer *HTTPServer) {
-	httpServer = &HTTPServer{
+func NewHTTPServer(config *Config) *HTTPServer {
+	httpServer := &HTTPServer{
 		config: config,
 
 		// Initializes a new http server with given host and port from config,
@@ -60,7 +60,7 @@ func NewHTTPServer(config *Config) (httpServer *HTTPServer) {
 		ctx.Abort()
 	})
 
-	return
+	return httpServer
 }
 
 func (r *HTTPServer) SetEngine(engine *gin.Engine) {
