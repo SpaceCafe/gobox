@@ -89,4 +89,16 @@ var (
 		http.StatusForbidden,
 		"Insufficient permission",
 	)
+	ProblemRequestTimeout = NewProblem(
+		"",
+		http.StatusText(http.StatusRequestTimeout),
+		http.StatusRequestTimeout,
+		"The request timed out due to rate limiting. Please try again later.",
+	)
+	ProblemQueueFull = NewProblem(
+		"",
+		http.StatusText(http.StatusTooManyRequests),
+		http.StatusTooManyRequests,
+		"The waiting queue is full due to high traffic. Please try again later.",
+	)
 )
