@@ -3,6 +3,7 @@ go 1.22
 use (
 	./gin-authentication
 	./gin-problems
+	./gin-ratelimit
 	./httpserver
 	./logger
 )
