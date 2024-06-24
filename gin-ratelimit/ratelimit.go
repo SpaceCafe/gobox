@@ -70,13 +70,13 @@ func New(config *Config) gin.HandlerFunc {
 // drainBurstChannel periodically drains the burstChannel based on the burst duration and maximum burst requests.
 // It creates a ticker that ticks at intervals determined by dividing the burst duration by the maximum burst requests.
 // At each tick, it attempts to remove an item from the burstChannel, ensuring that the burst limit is respected.
-func (rl *RateLimit) drainBurstChannel() {
-	ticker := time.NewTicker(rl.config.BurstDuration / time.Duration(rl.config.MaxBurstRequests))
+func (r *RateLimit) drainBurstChannel() {
+	ticker := time.NewTicker(r.config.BurstDuration / time.Duration(r.config.MaxBurstRequests))
 	defer ticker.Stop()
 
 	for range ticker.C {
 		select {
-		case <-rl.burstChannel:
+		case <-r.burstChannel:
 		default:
 		}
 	}

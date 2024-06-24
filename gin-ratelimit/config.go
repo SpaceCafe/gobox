@@ -52,20 +52,20 @@ func NewConfig() *Config {
 
 // Validate ensures that all necessary configurations are filled and within valid confines.
 // Any misconfiguration results in well-defined standardized errors.
-func (c *Config) Validate() error {
-	if c.MaxBurstRequests <= 0 {
+func (r *Config) Validate() error {
+	if r.MaxBurstRequests <= 0 {
 		return ErrInvalidMaxBurstRequests
 	}
-	if c.MaxConcurrentRequests <= 0 {
+	if r.MaxConcurrentRequests <= 0 {
 		return ErrInvalidMaxConcurrentRequests
 	}
-	if c.RequestQueueSize <= 0 {
+	if r.RequestQueueSize <= 0 {
 		return ErrInvalidRequestQueueSize
 	}
-	if c.BurstDuration <= 0 {
+	if r.BurstDuration <= 0 {
 		return ErrInvalidBurstDuration
 	}
-	if c.RequestTimeout <= 0 {
+	if r.RequestTimeout <= 0 {
 		return ErrInvalidRequestTimeout
 	}
 	return nil
