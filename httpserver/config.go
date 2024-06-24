@@ -11,7 +11,7 @@ import (
 
 const (
 	DefaultHost              = "127.0.0.1"
-	DefaultBasePath          = "/"
+	DefaultBasePath          = ""
 	DefaultReadTimeout       = time.Second * 30
 	DefaultReadHeaderTimeout = time.Second * 10
 	DefaultPort              = 8080
@@ -19,7 +19,6 @@ const (
 
 var (
 	ErrNoHost                   = errors.New("host cannot be empty")
-	ErrNoBasePath               = errors.New("base path must be an absolute path")
 	ErrInvalidBasePath          = errors.New("base path must end with a trailing slash")
 	ErrNoCertFile               = errors.New("key_file is set but cert_file is empty")
 	ErrNoKeyFile                = errors.New("cert_file is set but key_file is empty")
@@ -84,11 +83,7 @@ func (r *Config) Validate() error {
 		return ErrNoHost
 	}
 
-	if !path.IsAbs(r.BasePath) {
-		return ErrNoBasePath
-	}
-
-	if !strings.HasSuffix(r.BasePath, "/") {
+	if len(r.BasePath) > 0 && (!path.IsAbs(r.BasePath) || strings.HasSuffix(r.BasePath, "/")) {
 		return ErrInvalidBasePath
 	}
 
