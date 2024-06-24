@@ -117,6 +117,7 @@ func TestNew(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			gin.SetMode(gin.TestMode)
 			r := gin.Default()
 			r.Use(problems.New())
 			r.Use(New(tt.args.config))
