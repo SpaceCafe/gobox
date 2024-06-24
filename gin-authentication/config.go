@@ -11,9 +11,9 @@ const (
 )
 
 var (
-	ErrNoAPIKeys         = errors.New("api keys are not initialized")
+	ErrInvalidAPIKeys    = errors.New("api keys must not be nil")
 	ErrInvalidHeaderName = errors.New("header name contains invalid characters")
-	ErrNoUsers           = errors.New("users are not initialized")
+	ErrInvalidUsers      = errors.New("users must not be nil")
 	ErrNoPassword        = errors.New("password of a user cannot be empty")
 
 	validHeaderName = regexp.MustCompile(`^[A-Za-z0-9-]+$`)
@@ -52,22 +52,18 @@ func NewConfig() *Config {
 // Any misconfiguration results in well-defined standardized errors.
 func (r *Config) Validate() error {
 	if r.APIKeys == nil {
-		return ErrNoAPIKeys
+		return ErrInvalidAPIKeys
 	}
-
 	if !validHeaderName.MatchString(r.HeaderName) {
 		return ErrInvalidHeaderName
 	}
-
 	if r.Users == nil {
-		return ErrNoUsers
+		return ErrInvalidUsers
 	}
-
 	for i := range r.Users {
 		if len(r.Users[i]) == 0 {
 			return ErrNoPassword
 		}
 	}
-
 	return nil
 }
