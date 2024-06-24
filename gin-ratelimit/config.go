@@ -5,6 +5,14 @@ import (
 	"time"
 )
 
+const (
+	DefaultMaxBurstRequests      = 20
+	DefaultMaxConcurrentRequests = 10
+	DefaultRequestQueueSize      = 100
+	DefaultBurstDuration         = 30 * time.Second
+	DefaultRequestTimeout        = 1 * time.Minute
+)
+
 var (
 	ErrInvalidMaxBurstRequests      = errors.New("max burst requests must be greater than 0")
 	ErrInvalidMaxConcurrentRequests = errors.New("max concurrent requests must be greater than 0")
@@ -34,11 +42,11 @@ type Config struct {
 // NewConfig creates and returns a new Config with default values.
 func NewConfig() *Config {
 	return &Config{
-		MaxBurstRequests:      20,
-		MaxConcurrentRequests: 10,
-		RequestQueueSize:      100,
-		BurstDuration:         30 * time.Second,
-		RequestTimeout:        1 * time.Minute,
+		MaxBurstRequests:      DefaultMaxBurstRequests,
+		MaxConcurrentRequests: DefaultMaxConcurrentRequests,
+		RequestQueueSize:      DefaultRequestQueueSize,
+		BurstDuration:         DefaultBurstDuration,
+		RequestTimeout:        DefaultRequestTimeout,
 	}
 }
 
