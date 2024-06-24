@@ -19,7 +19,7 @@ const (
 
 var (
 	ErrNoHost                   = errors.New("host cannot be empty")
-	ErrInvalidBasePath          = errors.New("base path must end with a trailing slash")
+	ErrInvalidBasePath          = errors.New("base path must be absolute and not end with a slash")
 	ErrNoCertFile               = errors.New("key_file is set but cert_file is empty")
 	ErrNoKeyFile                = errors.New("cert_file is set but key_file is empty")
 	ErrInvalidReadTimeout       = errors.New("read_timeout must be greater than 0")
