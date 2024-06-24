@@ -1,9 +1,22 @@
 package authentication
 
-import "errors"
+import (
+	"errors"
+	"regexp"
+)
+
+const (
+	DefaultHeaderName        = "Authorization"
+	DefaultHeaderValuePrefix = "Bearer"
+)
 
 var (
-	ErrNoPassword = errors.New("password of a user cannot be empty")
+	ErrNoAPIKeys         = errors.New("api keys are not initialized")
+	ErrInvalidHeaderName = errors.New("header name contains invalid characters")
+	ErrNoUsers           = errors.New("users are not initialized")
+	ErrNoPassword        = errors.New("password of a user cannot be empty")
+
+	validHeaderName = regexp.MustCompile(`^[A-Za-z0-9-]+$`)
 )
 
 // Config holds configuration related to user and API key authentication.
@@ -27,12 +40,29 @@ type Config struct {
 
 // NewConfig creates and returns a new Config having default values.
 func NewConfig() *Config {
-	return &Config{HeaderName: "API-Key"}
+	return &Config{
+		APIKeys:           make([]string, 0),
+		HeaderName:        DefaultHeaderName,
+		HeaderValuePrefix: DefaultHeaderValuePrefix,
+		Users:             make(map[string]string),
+	}
 }
 
 // Validate ensures the all necessary configurations are filled and within valid confines.
 // Any misconfiguration results in well-defined standardized errors.
 func (r *Config) Validate() error {
+	if r.APIKeys == nil {
+		return ErrNoAPIKeys
+	}
+
+	if !validHeaderName.MatchString(r.HeaderName) {
+		return ErrInvalidHeaderName
+	}
+
+	if r.Users == nil {
+		return ErrNoUsers
+	}
+
 	for i := range r.Users {
 		if len(r.Users[i]) == 0 {
 			return ErrNoPassword
