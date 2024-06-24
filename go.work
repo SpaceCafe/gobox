@@ -6,4 +6,5 @@ use (
 	./gin-ratelimit
 	./httpserver
 	./logger
+	gin-csrf
 )
