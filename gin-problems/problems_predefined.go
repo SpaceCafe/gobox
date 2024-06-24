@@ -59,6 +59,12 @@ var (
 		http.StatusBadRequest,
 		"The specified key cannot be used to filter.",
 	)
+	ProblemCSRFMissing = NewProblem(
+		"",
+		"CSRF missing",
+		http.StatusForbidden,
+		"The CSRF token is missing.",
+	)
 	ProblemCSRFMalfunction = NewProblem(
 		"",
 		"CSRF malfunction",
