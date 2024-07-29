@@ -21,7 +21,7 @@ type LoggerItem struct {
 	StatusCode int           `json:"status-code"`
 }
 
-func (r LoggerItem) String() string {
+func (r *LoggerItem) String() string {
 	return fmt.Sprintf("%s | %13v | %15s | %-7s %#v\n%s",
 		r.StatusCodeColor(),
 		r.Latency,
@@ -32,7 +32,7 @@ func (r LoggerItem) String() string {
 	)
 }
 
-func (r LoggerItem) StatusCodeColor() string {
+func (r *LoggerItem) StatusCodeColor() string {
 	code := strconv.Itoa(r.StatusCode)
 	switch {
 	case r.StatusCode >= http.StatusOK && r.StatusCode < http.StatusMultipleChoices:
@@ -46,7 +46,7 @@ func (r LoggerItem) StatusCodeColor() string {
 	}
 }
 
-func (r LoggerItem) MethodColor() string {
+func (r *LoggerItem) MethodColor() string {
 	switch r.Method {
 	case http.MethodGet:
 		return color.BlueString(r.Method)
