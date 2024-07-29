@@ -83,7 +83,7 @@ func (r *Config) Validate() error {
 		return ErrNoHost
 	}
 
-	if r.BasePath == "" && (!path.IsAbs(r.BasePath) || strings.HasSuffix(r.BasePath, "/")) {
+	if r.BasePath != "" && (!path.IsAbs(r.BasePath) || strings.HasSuffix(r.BasePath, "/")) {
 		return ErrInvalidBasePath
 	}
 
