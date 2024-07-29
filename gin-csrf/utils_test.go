@@ -55,13 +55,13 @@ func TestHeaderToken(t *testing.T) {
 			gin.SetMode(gin.TestMode)
 			r := gin.Default()
 			r.Use(problems.New())
-			r.Use(New(tt.fields.config, tt.fields.serverConfig))
+			r.Use(New(tt.fields.config, nil))
 			r.GET("/test", func(c *gin.Context) {
 				name, value := HeaderToken(c)
 				c.String(http.StatusOK, "%s,%s", name, value)
 			})
 
-			request := httptest.NewRequest("GET", "/test", nil)
+			request := httptest.NewRequest("GET", "/test", http.NoBody)
 			recorder := httptest.NewRecorder()
 			r.ServeHTTP(recorder, request)
 

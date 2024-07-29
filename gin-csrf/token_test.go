@@ -74,7 +74,7 @@ func TestNewTokenFromCookie(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gin.SetMode(gin.TestMode)
 			ctx, _ := gin.CreateTestContext(nil)
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 			req.AddCookie(&http.Cookie{Name: tt.args.config.CookieName, Value: tt.args.cookie})
 			ctx.Request = req
 

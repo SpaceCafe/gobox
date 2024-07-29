@@ -157,15 +157,15 @@ func TestNew(t *testing.T) {
 			gin.SetMode(gin.TestMode)
 			r := gin.Default()
 			r.Use(problems.New())
-			r.Use(New(tt.args.config, tt.args.serverConfig))
+			r.Use(New(tt.args.config, nil))
 			r.GET("/test", func(_ *gin.Context) {})
 			r.POST("/test", func(_ *gin.Context) {})
 
-			request := httptest.NewRequest(tt.fields.method, "/test", nil)
-			if len(tt.fields.cookieValue) > 0 {
+			request := httptest.NewRequest(tt.fields.method, "/test", http.NoBody)
+			if tt.fields.cookieValue == "" {
 				request.AddCookie(&http.Cookie{Name: tt.fields.cookieName, Value: tt.fields.cookieValue})
 			}
-			if len(tt.fields.headerValue) > 0 {
+			if tt.fields.headerValue == "" {
 				request.Header.Add(tt.fields.headerName, tt.fields.headerValue)
 			}
 			recorder := httptest.NewRecorder()
