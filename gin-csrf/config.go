@@ -35,13 +35,14 @@ var (
 	ErrNoSigner              = errors.New("signer must not be nil")
 	ErrNoLogger              = errors.New("logger cannot be empty")
 
-	SameSiteMap = map[string]http.SameSite{
+	//nolint:gochecknoglobals // Maintain a set of predefined http.SameSite that are used throughout the application.
+	SameSites = map[string]http.SameSite{
 		"lax":    http.SameSiteLaxMode,
 		"strict": http.SameSiteStrictMode,
 		"none":   http.SameSiteNoneMode,
 	}
 
-	validCookieName = regexp.MustCompile(`^[!#$%&'*+-.^_` + "`" + `|~0-9a-zA-Z]+$`)
+	validCookieName = regexp.MustCompile(`^[!#$%&'*\+\-.^_` + "`" + `|~0-9a-zA-Z]+$`)
 	validHeaderName = regexp.MustCompile(`^[A-Za-z0-9-]+$`)
 )
 
@@ -155,10 +156,10 @@ func (r *Config) Validate() error {
 // If SameSite is an empty string, it uses the existing value in the Config struct.
 func (r *Config) SetSameSite(sameSite string) error {
 	var key = sameSite
-	if len(sameSite) == 0 {
+	if sameSite == "" {
 		key = r.SameSite
 	}
-	if value, ok := SameSiteMap[strings.ToLower(key)]; ok {
+	if value, ok := SameSites[strings.ToLower(key)]; ok {
 		r.sameSite = value
 		return nil
 	}
