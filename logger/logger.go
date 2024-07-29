@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strings"
 )
 
 const (
@@ -67,6 +68,16 @@ func (r *Logger) SetLevel(level Level) error {
 	r.level = level
 
 	return nil
+}
+
+// ParseLevel sets the current loglevel to the desired value from string identifier.
+func (r *Logger) ParseLevel(name string) error {
+	if level, ok := StringToLevel[strings.ToLower(name)]; ok {
+		r.level = level
+		return nil
+	}
+
+	return ErrInvalidLevel
 }
 
 // SetOutput opens or create the given file and set it as the new logging destination.
