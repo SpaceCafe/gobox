@@ -49,7 +49,7 @@ func TestHTTPServer_Start(t *testing.T) {
 			})
 
 			// Start the server in a new goroutine.
-			server.Start()
+			server.Start(context.Background(), func() {})
 
 			// Wait for the server to start.
 			time.Sleep(1 * time.Second)
@@ -82,16 +82,17 @@ func TestHTTPServer_Stop(t *testing.T) {
 		server := NewHTTPServer(config)
 
 		// Start the server in a separate goroutine.
-		server.Start()
+		ctx, cancel := context.WithCancel(context.Background())
+		server.Start(ctx, func() {})
 
 		// Wait for the server to start
 		time.Sleep(100 * time.Millisecond)
 
 		// Call Stop method and wait for it to finish.
-		server.Stop()
+		cancel()
 
 		// Try to access the server after stopping
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel = context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 		req, err := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:8888", http.NoBody)
 		assert.NoError(t, err)

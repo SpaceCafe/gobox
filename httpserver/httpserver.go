@@ -12,8 +12,13 @@ import (
 	problems "github.com/spacecafe/gobox/gin-problems"
 )
 
+var (
+	ErrNoContext = errors.New("context can not be empty")
+)
+
 // HTTPServer encapsulates an HTTP server with some additional features.
 type HTTPServer struct {
+
 	// Config contains configuration settings for the HTTP server.
 	config *Config
 
@@ -75,13 +80,17 @@ func (r *HTTPServer) SetEngine(engine *gin.Engine) {
 }
 
 // Start function starts the HTTP server in a separate goroutine.
-func (r *HTTPServer) Start() {
+func (r *HTTPServer) Start(ctx context.Context, done func()) error {
 	r.config.Logger.Infof("starting web server and listen to %s", r.server.Addr)
+
+	if ctx == nil {
+		return ErrNoContext
+	}
 
 	go func() {
 		var err error
 
-		if r.config.CertFile == "" {
+		if r.config.CertFile != "" {
 			// Starts with TLS.
 			r.server.TLSConfig = &tls.Config{
 				MinVersion: tls.VersionTLS12,
@@ -99,6 +108,14 @@ func (r *HTTPServer) Start() {
 			r.config.Logger.Fatal(err)
 		}
 	}()
+
+	go func() {
+		<-ctx.Done()
+		r.Stop()
+		done()
+	}()
+
+	return nil
 }
 
 // Stop function stops the HTTP server gracefully within a second time limit.
