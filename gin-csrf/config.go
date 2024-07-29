@@ -25,13 +25,15 @@ const (
 
 var (
 	ErrInvalidExcludedRoutes = errors.New("excluded routes must not be nil")
-	ErrInvalidSecretKey      = errors.New("secret key must not be empty")
-	ErrInvalidCookieName     = errors.New("cookie name must not be empty")
-	ErrInvalidHeaderName     = errors.New("header name must not be empty")
+	ErrInvalidExcludedRoute  = errors.New("excluded route must be absolute and not end with a slash")
+	ErrNoSecretKey           = errors.New("secret key must not be empty")
+	ErrInvalidCookieName     = errors.New("cookie name must not be empty or contain invalid characters")
+	ErrInvalidHeaderName     = errors.New("header name must not be empty or contain invalid characters")
 	ErrInvalidSameSite       = errors.New("same site is not valid")
 	ErrInvalidPath           = errors.New("path must be absolute and not end with a slash")
 	ErrInvalidTokenLength    = errors.New("token length must be greater than 0")
-	ErrInvalidSigner         = errors.New("signer function must not be nil")
+	ErrNoSigner              = errors.New("signer must not be nil")
+	ErrNoLogger              = errors.New("logger cannot be empty")
 
 	SameSiteMap = map[string]http.SameSite{
 		"lax":    http.SameSiteLaxMode,
@@ -88,7 +90,7 @@ type Config struct {
 
 // NewConfig creates and returns a new Config having default values.
 func NewConfig(log *logger.Logger) *Config {
-	c := &Config{
+	config := &Config{
 		ExcludedRoutes: make([]string, 0),
 		CookieName:     DefaultCookieName,
 		HeaderName:     DefaultHeaderName,
@@ -102,12 +104,12 @@ func NewConfig(log *logger.Logger) *Config {
 	}
 
 	if log != nil {
-		c.Logger = log
+		config.Logger = log
 	} else {
-		c.Logger = logger.Default()
+		config.Logger = logger.Default()
 	}
 
-	return c
+	return config
 }
 
 // Validate ensures the all necessary configurations are filled and within valid confines.
@@ -116,8 +118,13 @@ func (r *Config) Validate() error {
 	if r.ExcludedRoutes == nil {
 		return ErrInvalidExcludedRoutes
 	}
+	for i := range r.ExcludedRoutes {
+		if !path.IsAbs(r.ExcludedRoutes[i]) {
+			return ErrInvalidExcludedRoute
+		}
+	}
 	if len(r.SecretKey) == 0 {
-		return ErrInvalidSecretKey
+		return ErrNoSecretKey
 	}
 	if validCookieName.MatchString(r.CookieName) {
 		return ErrInvalidCookieName
@@ -131,12 +138,14 @@ func (r *Config) Validate() error {
 	if !path.IsAbs(r.Path) {
 		return ErrInvalidPath
 	}
-
 	if r.TokenLength <= 0 {
 		return ErrInvalidTokenLength
 	}
 	if r.Signer == nil {
-		return ErrInvalidSigner
+		return ErrNoSigner
+	}
+	if r.Logger == nil {
+		return ErrNoLogger
 	}
 	return nil
 }
