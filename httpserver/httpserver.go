@@ -23,6 +23,9 @@ type HTTPServer struct {
 
 	// Engine is an instance from Gin web framework for Go to handle HTTP requests.
 	Engine *gin.Engine
+
+	// Router is a router group from Gin that allows setting a base path for all routes.
+	Router *gin.RouterGroup
 }
 
 // NewHTTPServer creates a new instance of HTTPServer with given configuration.
@@ -60,6 +63,9 @@ func NewHTTPServer(config *Config) *HTTPServer {
 		ctx.Abort()
 	})
 
+	// Sets the base path for all routes using the Router group.
+	httpServer.Router = engine.Group(config.BasePath)
+
 	return httpServer
 }
 
@@ -75,7 +81,7 @@ func (r *HTTPServer) Start() {
 	go func() {
 		var err error
 
-		if len(r.config.CertFile) > 0 {
+		if r.config.CertFile == "" {
 			// Starts with TLS.
 			r.server.TLSConfig = &tls.Config{
 				MinVersion: tls.VersionTLS12,
