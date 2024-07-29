@@ -96,9 +96,9 @@ func TestNew(t *testing.T) {
 				c.String(http.StatusOK, "OK")
 			})
 
-			go r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/test?ignore", nil))
+			go r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/test?ignore", http.NoBody))
 
-			request := httptest.NewRequest("GET", "/test", nil)
+			request := httptest.NewRequest("GET", "/test", http.NoBody)
 			recorder := httptest.NewRecorder()
 			time.Sleep(100 * time.Millisecond)
 			r.ServeHTTP(recorder, request)

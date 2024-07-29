@@ -23,6 +23,7 @@ var (
 
 // Config holds configuration related to rate limiting.
 type Config struct {
+
 	// MaxBurstRequests represents the maximum number of requests that can be processed in a burst.
 	MaxBurstRequests int `json:"max_burst_requests" yaml:"max_burst_requests" mapstructure:"max_burst_requests"`
 
