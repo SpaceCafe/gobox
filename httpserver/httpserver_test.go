@@ -57,7 +57,7 @@ func TestHTTPServer_Start(t *testing.T) {
 			// Make a request to check if the server is running.
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			req, err := http.NewRequestWithContext(ctx, "GET", tt.schema+"://127.0.0.1:8888/ping", nil)
+			req, err := http.NewRequestWithContext(ctx, "GET", tt.schema+"://127.0.0.1:8888/ping", http.NoBody)
 			assert.NoError(t, err)
 			// #nosec G402
 			client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
@@ -93,7 +93,7 @@ func TestHTTPServer_Stop(t *testing.T) {
 		// Try to access the server after stopping
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
-		req, err := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:8888", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:8888", http.NoBody)
 		assert.NoError(t, err)
 		resp, err := http.DefaultClient.Do(req)
 		assert.Error(t, err)

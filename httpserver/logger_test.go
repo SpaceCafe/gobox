@@ -43,7 +43,7 @@ func TestLogger(t *testing.T) {
 			_ = os.Truncate("testdata/test.log", 0)
 
 			c, _ := gin.CreateTestContext(nil)
-			c.Request, _ = http.NewRequest(tt.args.method, tt.args.url, nil)
+			c.Request, _ = http.NewRequest(tt.args.method, tt.args.url, http.NoBody)
 			c.Status(tt.args.status)
 			Logger(log)(c)
 
