@@ -58,7 +58,7 @@ type Config struct {
 
 // NewConfig creates and returns a new Config having default values.
 func NewConfig(log *logger.Logger) *Config {
-	c := &Config{
+	config := &Config{
 		Host:              DefaultHost,
 		BasePath:          DefaultBasePath,
 		ReadTimeout:       DefaultReadTimeout,
@@ -67,12 +67,12 @@ func NewConfig(log *logger.Logger) *Config {
 	}
 
 	if log != nil {
-		c.Logger = log
+		config.Logger = log
 	} else {
-		c.Logger = logger.Default()
+		config.Logger = logger.Default()
 	}
 
-	return c
+	return config
 }
 
 // Validate ensures the all necessary configurations are filled and within valid confines.
@@ -83,7 +83,7 @@ func (r *Config) Validate() error {
 		return ErrNoHost
 	}
 
-	if len(r.BasePath) > 0 && (!path.IsAbs(r.BasePath) || strings.HasSuffix(r.BasePath, "/")) {
+	if r.BasePath == "" && (!path.IsAbs(r.BasePath) || strings.HasSuffix(r.BasePath, "/")) {
 		return ErrInvalidBasePath
 	}
 
