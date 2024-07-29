@@ -20,6 +20,21 @@ linters-settings:
           - github.com/gin-gonic/gin
           - github.com/spacecafe
           - github.com/stretchr/testify
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+      - opinionated
+  gocyclo:
+    min-complexity: 10
+  gofmt:
+    rewrite-rules:
+      - pattern: 'interface{}'
+        replacement: 'any'
+      - pattern: 'a[b:len(a)]'
+        replacement: 'a[b:]'
 
 linters:
   enable:
@@ -32,19 +47,22 @@ linters:
     - exportloopref
     - funlen
     - gocheckcompilerdirectives
+    - gochecknoglobals
     - gochecknoinits
     - goconst
     - gocritic
     - gocyclo
+    - godot
+    - godox
     - gofmt
     - goimports
-    - gomnd
     - goprintffuncname
     - gosec
     - gosimple
     - govet
     - ineffassign
     - misspell
+    - mnd
     - nakedret
     - noctx
     - nolintlint
@@ -55,7 +73,6 @@ linters:
     - unconvert
     - unparam
     - unused
-    - whitespace
 
 issues:
   exclude-rules:
