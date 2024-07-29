@@ -7,19 +7,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 	problems "github.com/spacecafe/gobox/gin-problems"
-	"github.com/spacecafe/gobox/httpserver"
 )
 
-func New(config *Config, serverConfig *httpserver.Config) gin.HandlerFunc {
+func New(config *Config, routerGroup *gin.RouterGroup) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		fullPath := ctx.FullPath()
-		if len(fullPath) == 0 {
+		if fullPath == "" {
 			return
+		}
+		if routerGroup != nil {
+			fullPath = fullPath[len(routerGroup.BasePath()):]
 		}
 		ctx.Set("csrf/config", config)
 
 		// Skip CSRF on excluded paths
-		if slices.Contains(config.ExcludedRoutes, fullPath[len(serverConfig.BasePath):]) {
+		if slices.Contains(config.ExcludedRoutes, fullPath) {
 			ctx.Next()
 			return
 		}
