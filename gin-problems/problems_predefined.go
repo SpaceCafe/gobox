@@ -107,4 +107,16 @@ var (
 		http.StatusTooManyRequests,
 		"The waiting queue is full due to high traffic. Please try again later.",
 	)
+	ProblemResourceAlreadyExists = NewProblem(
+		"",
+		http.StatusText(http.StatusConflict),
+		http.StatusConflict,
+		"The resource or the value of an identifier already exists. Please specify a different identifier and try again.",
+	)
+	ProblemMissingRequiredParameter = NewProblem(
+		"",
+		http.StatusText(http.StatusBadRequest),
+		http.StatusBadRequest,
+		"The resource is missing a required parameter. Check the service documentation and try again.",
+	)
 )
