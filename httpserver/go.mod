@@ -5,6 +5,7 @@ go 1.22
 require (
 	github.com/fatih/color v1.16.0
 	github.com/gin-gonic/gin v1.10.0
+	github.com/spacecafe/gobox/gin-problems v0.0.0-20240624071849-e800779375b0
 	github.com/spacecafe/gobox/logger v0.0.0-20240205124726-69b7164a3035
 	github.com/stretchr/testify v1.9.0
 )
@@ -21,7 +22,6 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.22.0 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
