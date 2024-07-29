@@ -28,7 +28,7 @@ var (
 	ErrNoLogger                 = errors.New("logger cannot be empty")
 )
 
-// Config defines the essential parameters for serving a Lambda broker service.
+// Config defines the essential parameters for serving a http server.
 type Config struct {
 
 	// Host represents network host address.
