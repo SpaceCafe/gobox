@@ -77,7 +77,11 @@ func NewHTTPServer(config *Config) *HTTPServer {
 	})
 
 	// Sets the base path for all routes using the Router group.
-	httpServer.Router = engine.Group(config.BasePath)
+	if config.BasePath == "" {
+		httpServer.Router = &engine.RouterGroup
+	} else {
+		httpServer.Router = engine.Group(config.BasePath)
+	}
 
 	return httpServer
 }
