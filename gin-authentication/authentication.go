@@ -13,6 +13,7 @@ import (
 var (
 	ErrInvalidPassword = errors.New("password is not valid")
 
+	//nolint:gochecknoglobals // Maintain a set of predefined compareFuncs that are used throughout the application.
 	compareFuncs = []struct {
 		prefix  string
 		compare func([]byte, []byte) error
@@ -45,7 +46,7 @@ func New(config *Config) gin.HandlerFunc {
 
 		// Compare the provided password with server's configured API key using constant time comparison to prevent timing attacks.
 		// If password matches, continue handling original request as user is authenticated.
-		if len(password) > 0 {
+		if password != "" {
 			for i := range config.APIKeys {
 				if comparePasswords([]byte(config.APIKeys[i]), []byte(password)) {
 					authenticated = true
@@ -75,7 +76,7 @@ func New(config *Config) gin.HandlerFunc {
 }
 
 // comparePasswords compares an inputted password with a hashed password using one of the functions in compareFuncs.
-func comparePasswords(hashedPassword []byte, password []byte) bool {
+func comparePasswords(hashedPassword, password []byte) bool {
 	// Deny empty passwords.
 	if len(hashedPassword) == 0 || len(password) == 0 {
 		return false
@@ -93,7 +94,7 @@ func comparePasswords(hashedPassword []byte, password []byte) bool {
 }
 
 // compareBlankPasswords checks the provided passwords using constant time comparison to prevent timing attacks.
-func compareBlankPasswords(hashedPassword []byte, password []byte) error {
+func compareBlankPasswords(hashedPassword, password []byte) error {
 	if subtle.ConstantTimeCompare(hashedPassword, password) == 1 {
 		return nil
 	}

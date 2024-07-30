@@ -12,6 +12,7 @@ const (
 
 var (
 	ErrInvalidAPIKeys    = errors.New("api keys must not be nil")
+	ErrNoAPISecretKey    = errors.New("api secret key must not be nil")
 	ErrInvalidHeaderName = errors.New("header name contains invalid characters")
 	ErrInvalidUsers      = errors.New("users must not be nil")
 	ErrNoPassword        = errors.New("password of a user cannot be empty")
@@ -54,6 +55,11 @@ func (r *Config) Validate() error {
 	if r.APIKeys == nil {
 		return ErrInvalidAPIKeys
 	}
+	for i := range r.APIKeys {
+		if r.APIKeys[i] == "" {
+			return ErrNoAPISecretKey
+		}
+	}
 	if !validHeaderName.MatchString(r.HeaderName) {
 		return ErrInvalidHeaderName
 	}
@@ -61,7 +67,7 @@ func (r *Config) Validate() error {
 		return ErrInvalidUsers
 	}
 	for i := range r.Users {
-		if len(r.Users[i]) == 0 {
+		if r.Users[i] == "" {
 			return ErrNoPassword
 		}
 	}

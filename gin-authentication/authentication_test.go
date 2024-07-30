@@ -128,15 +128,15 @@ func TestNew(t *testing.T) {
 			})
 
 			recorder := httptest.NewRecorder()
-			request := httptest.NewRequest("GET", "/test", nil)
+			request := httptest.NewRequest("GET", "/test", http.NoBody)
 
 			// Set basic authentication, if username is set.
-			if len(tt.args.username) > 0 {
+			if tt.args.username != "" {
 				request.SetBasicAuth(tt.args.username, tt.args.password)
 			}
 
 			// Set api-key authentication, if HeaderName is set.
-			if len(tt.args.config.HeaderName) > 0 {
+			if tt.args.config.HeaderName != "" {
 				request.Header.Set(tt.args.config.HeaderName, tt.args.password)
 			}
 
