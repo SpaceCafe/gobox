@@ -60,6 +60,11 @@ func (r *Logger) SetFormat(format Format) error {
 	return nil
 }
 
+// GetLevel returns the current loglevel.
+func (r *Logger) GetLevel() Level {
+	return r.level
+}
+
 // SetLevel sets the current loglevel to the desired value.
 func (r *Logger) SetLevel(level Level) error {
 	if level < DebugLevel || level > FatalLevel {
