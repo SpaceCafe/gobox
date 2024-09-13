@@ -32,11 +32,13 @@ type HTTPServer struct {
 
 	// Router is a router group from Gin that allows setting a base path for all routes.
 	Router *gin.RouterGroup
+
+	done func()
 }
 
 // NewHTTPServer creates a new instance of HTTPServer with given configuration.
 func NewHTTPServer(config *Config) *HTTPServer {
-	httpServer := &HTTPServer{
+	var httpServer = &HTTPServer{
 		config: config,
 
 		// Initializes a new http server with given host and port from config,
@@ -46,9 +48,7 @@ func NewHTTPServer(config *Config) *HTTPServer {
 			ReadTimeout:       config.ReadTimeout,
 			ReadHeaderTimeout: config.ReadHeaderTimeout,
 		},
-	}
-
-	// Set mode of gin dependent on logging level.
+	} // Set mode of gin dependent on logging level.
 	if config.Logger.GetLevel() == logger.DebugLevel {
 		gin.SetMode(gin.DebugMode)
 	} else {
@@ -99,6 +99,8 @@ func (r *HTTPServer) Start(ctx context.Context, done func()) error {
 		return ErrNoContext
 	}
 
+	r.done = done
+
 	go func() {
 		var err error
 
@@ -124,7 +126,6 @@ func (r *HTTPServer) Start(ctx context.Context, done func()) error {
 	go func() {
 		<-ctx.Done()
 		r.Stop()
-		done()
 	}()
 
 	return nil
@@ -132,6 +133,7 @@ func (r *HTTPServer) Start(ctx context.Context, done func()) error {
 
 // Stop function stops the HTTP server gracefully within a second time limit.
 func (r *HTTPServer) Stop() {
+	defer r.done()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
