@@ -2,9 +2,13 @@ go 1.22
 
 use (
 	gin-authentication
+	gin-authorization
 	gin-csrf
+	gin-jwt
 	gin-problems
 	gin-ratelimit
+	gin-rest
+	gin-saml
 	httpserver
 	logger
 	terminator
