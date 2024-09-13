@@ -121,14 +121,14 @@ func TestNew(t *testing.T) {
 			r := gin.Default()
 			r.Use(problems.New())
 			r.Use(New(tt.args.config))
-			r.GET("/test", func(c *gin.Context) {
+			r.GET("/", func(c *gin.Context) {
 				c.JSON(http.StatusOK, struct {
 					Text string `json:"text"`
 				}{"This is a test"})
 			})
 
 			recorder := httptest.NewRecorder()
-			request := httptest.NewRequest("GET", "/test", http.NoBody)
+			request := httptest.NewRequest("GET", "/", http.NoBody)
 
 			// Set basic authentication, if username is set.
 			if tt.args.username != "" {
