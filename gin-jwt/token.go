@@ -22,7 +22,7 @@ func NewToken(config *Config, claims *Claims) (*Token, error) {
 	token := &Token{
 		Token: jwt_.NewWithClaims(config.Signer, claims),
 	}
-	token.signedToken, err = token.SignedString(config.SecretKey)
+	token.signedToken, err = token.SignedString(config.getSecretKey())
 	return token, err
 }
 
@@ -40,7 +40,7 @@ func NewTokenFromHeader(config *Config, ctx *gin.Context) (*Token, error) {
 				return nil, ErrUnequalSigner
 			}
 
-			return config.SecretKey, nil
+			return config.getSecretKey(), nil
 		},
 	)
 

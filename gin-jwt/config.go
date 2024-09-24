@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"encoding/base64"
 	"errors"
 	"path"
 	"time"
@@ -36,11 +37,13 @@ type Config struct {
 	// ExcludedRoutes is a list of routes that are excluded from JWT.
 	ExcludedRoutes []string `json:"excluded_routes" yaml:"excluded_routes" mapstructure:"excluded_routes"`
 
-	// SecretKey is used to generate and validate JWT.
-	SecretKey []byte `json:"secret_key" yaml:"secret_key" mapstructure:"secret_key"`
-
 	// Audiences is the intended recipient of the token.
 	Audiences []string `json:"audiences" yaml:"audiences" mapstructure:"audiences"`
+
+	secretKey []byte
+
+	// SecretKey as a base64 encoded string (RFC 4648) is used to generate and validate JWT.
+	SecretKey string `json:"secret_key" yaml:"secret_key" mapstructure:"secret_key"`
 
 	// Issuer is the entity that issues the token.
 	Issuer string `json:"issuer" yaml:"issuer" mapstructure:"issuer"`
@@ -85,8 +88,11 @@ func (r *Config) Validate() error {
 			return ErrInvalidExcludedRoute
 		}
 	}
-	if len(r.SecretKey) == 0 {
+	if r.SecretKey == "" {
 		return ErrNoSecretKey
+	}
+	if err := r.setSecretKey(r.SecretKey); err != nil {
+		return err
 	}
 	if r.Audiences == nil {
 		return ErrInvalidAudiences
@@ -96,7 +102,7 @@ func (r *Config) Validate() error {
 			return ErrNoAudience
 		}
 	}
-	if len(r.Issuer) == 0 {
+	if r.Issuer == "" {
 		return ErrNoIssuer
 	}
 	if r.Signer == nil {
@@ -109,4 +115,16 @@ func (r *Config) Validate() error {
 		return ErrNoLogger
 	}
 	return nil
+}
+
+func (r *Config) setSecretKey(key string) (err error) {
+	r.secretKey, err = base64.StdEncoding.DecodeString(key)
+	return
+}
+
+func (r *Config) getSecretKey() []byte {
+	if r.secretKey == nil || len(r.secretKey) == 0 {
+		panic(ErrNoSecretKey)
+	}
+	return r.secretKey
 }
