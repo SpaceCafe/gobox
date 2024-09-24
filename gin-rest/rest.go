@@ -4,15 +4,17 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	authorization "github.com/spacecafe/gobox/gin-authorization"
+	jwt "github.com/spacecafe/gobox/gin-jwt"
 	"github.com/spacecafe/gobox/gin-rest/controller"
 )
 
 type REST struct {
-	router      gin.IRouter
+	router      *gin.RouterGroup
 	schemaCache *sync.Map
 }
 
-func New(router gin.IRouter) *REST {
+func New(router *gin.RouterGroup, jwtConfig *jwt.Config, authorizationConfig *authorization.Config) *REST {
 
 	// Check if router is nil.
 	if router == nil {
@@ -23,6 +25,10 @@ func New(router gin.IRouter) *REST {
 	if err := controller.InitializeValidators(); err != nil {
 		panic(err)
 	}
+
+	// Add JWT and authorization middlewares.
+	router.Use(jwt.New(jwtConfig, router))
+	router.Use(authorization.New(authorizationConfig, router))
 
 	return &REST{
 		router:      router,

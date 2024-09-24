@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 
+	authorization "github.com/spacecafe/gobox/gin-authorization"
 	"github.com/spacecafe/gobox/gin-rest/controller"
 	"github.com/spacecafe/gobox/gin-rest/service"
 	"github.com/spacecafe/gobox/gin-rest/types"
@@ -195,34 +196,34 @@ func (r *Resource[T]) applyRoutes() {
 	r.basePath = &url.URL{Path: group.BasePath()}
 
 	if creator, ok := r.Controller.(types.ControllerCreator[T]); ok && checkServiceAndViews[T, types.ServiceCreator[T], types.ViewCreator[T]](r) {
-		group.POST(types.PathWithoutID, creator.Create(r))
+		group.POST(types.PathWithoutID, authorization.RequireAuthorization(r.Name(), authorization.CreateAction), creator.Create(r))
 		r.capabilities[types.PathWithoutID] = append(r.capabilities[types.PathWithoutID], http.MethodPost)
 	}
 
 	if reader, ok := r.Controller.(types.ControllerReader[T]); ok && checkServiceAndViews[T, types.ServiceReader[T], types.ViewReader[T]](r) {
-		group.GET(types.PathWithID, reader.Read(r))
+		group.GET(types.PathWithID, authorization.RequireAuthorization(r.Name(), authorization.ReadAction), reader.Read(r))
 		r.capabilities[types.PathWithID] = append(r.capabilities[types.PathWithID], http.MethodGet)
 	}
 
 	if lister, ok := r.Controller.(types.ControllerLister[T]); ok && checkServiceAndViews[T, types.ServiceLister[T], types.ViewLister[T]](r) {
-		group.GET(types.PathWithoutID, lister.List(r))
+		group.GET(types.PathWithoutID, authorization.RequireAuthorization(r.Name(), authorization.ListAction), lister.List(r))
 		r.capabilities[types.PathWithoutID] = append(r.capabilities[types.PathWithoutID], http.MethodGet)
 	}
 
 	if updater, ok := r.Controller.(types.ControllerUpdater[T]); ok && checkServiceAndViews[T, types.ServiceUpdater[T], types.ViewUpdater[T]](r) {
-		group.PUT(types.PathWithID, updater.Update(r, false))
-		group.PATCH(types.PathWithID, updater.Update(r, true))
+		group.PUT(types.PathWithID, authorization.RequireAuthorization(r.Name(), authorization.UpdateAction), updater.Update(r, false))
+		group.PATCH(types.PathWithID, authorization.RequireAuthorization(r.Name(), authorization.UpdateAction), updater.Update(r, true))
 		r.capabilities[types.PathWithID] = append(r.capabilities[types.PathWithID], http.MethodPut, http.MethodPatch)
 	}
 
 	if deleter, ok := r.Controller.(types.ControllerDeleter[T]); ok && checkServiceAndViews[T, types.ServiceDeleter[T], types.ViewDeleter[T]](r) {
-		group.DELETE(types.PathWithID, deleter.Delete(r))
+		group.DELETE(types.PathWithID, authorization.RequireAuthorization(r.Name(), authorization.DeleteAction), deleter.Delete(r))
 		r.capabilities[types.PathWithID] = append(r.capabilities[types.PathWithID], http.MethodDelete)
 	}
 
 	if capabilitator, ok := r.Controller.(types.ControllerCapabilitator); ok {
 		for relPath, allows := range r.capabilities {
-			group.OPTIONS(relPath, capabilitator.Capability(strings.Join(allows, mimeSeparator), joinMapKeys(r.Views, mimeSeparator)))
+			group.OPTIONS(relPath, authorization.RequireAuthorization(r.Name(), authorization.CapabilitiesAction), capabilitator.Capability(strings.Join(allows, mimeSeparator), joinMapKeys(r.Views, mimeSeparator)))
 		}
 	}
 }
