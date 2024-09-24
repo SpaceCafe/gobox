@@ -17,6 +17,7 @@ func RequireAuthorization(resource string, action Action) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if IsAuthorized(ctx, resource, action) {
 			ctx.Next()
+			return
 		}
 		_ = ctx.Error(problems.ProblemInsufficientPermission)
 		ctx.Abort()
