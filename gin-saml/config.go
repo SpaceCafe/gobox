@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/url"
 	"slices"
+	"strings"
 	"time"
 	"unicode"
 
@@ -13,7 +14,7 @@ import (
 
 var (
 	bindingURNs        = []string{saml.HTTPPostBinding, saml.HTTPRedirectBinding, saml.HTTPArtifactBinding, saml.SOAPBinding, saml.SOAPBindingV1}
-	validSameSite      = []string{"Strict", "Lax", "None"}
+	validSameSite      = []string{"strict", "lax", "none"}
 	validNameIDFormats = []string{
 		string(saml.UnspecifiedNameIDFormat),
 		string(saml.EmailAddressNameIDFormat),
@@ -158,7 +159,7 @@ func (r *Config) Validate() error {
 		return ErrInvalidErrorURI
 	}
 
-	if !slices.Contains(validSameSite, r.CookieSameSite) {
+	if !slices.Contains(validSameSite, strings.ToLower(r.CookieSameSite)) {
 		return ErrInvalidCookieSameSite
 	}
 
