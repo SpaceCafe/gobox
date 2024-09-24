@@ -80,6 +80,11 @@ func (r *SAML) newMiddleware(basePath string) error {
 	}
 	r.config.Logger.Debugf("current metadata: %+v", idpMetadata)
 
+	// Trailing slash is necessary to ensure correct URL for metadata, SLO, and ACS endpoints.
+	if basePath != "" && basePath[len(basePath)-1] != '/' {
+		basePath += "/"
+	}
+
 	// Parse the base path to set URL in SAML.
 	baseURL, err := url.Parse(r.config.URI + basePath)
 	if err != nil {
