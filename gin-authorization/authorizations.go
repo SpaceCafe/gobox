@@ -20,14 +20,14 @@ func NewAuthorizations(config *Config, ctx *gin.Context) Authorizations {
 
 	// Merge group authorizations
 	for _, group := range userAuth.Groups() {
-		if groupAuth, ok := config.GroupMapper.Map()[group]; !ok {
+		if groupAuth, ok := config.GroupMapper.Map()[group]; ok {
 			authorizations.Merge(groupAuth)
 		}
 	}
 
 	// Merge role authorizations
 	for _, role := range userAuth.Roles() {
-		if roleAuth, ok := config.RoleMapper.Map()[role]; !ok {
+		if roleAuth, ok := config.RoleMapper.Map()[role]; ok {
 			authorizations.Merge(roleAuth)
 		}
 	}
