@@ -6,6 +6,11 @@ import (
 )
 
 var (
+	DefaultExcludedRoutes  = make([]string, 0)
+	DefaultRoles           = make(map[string][]Entitlement)
+	DefaultGroups          = make(map[string][]Entitlement)
+	DefaultUserAuthAdapter = NewJWTUserAuthAdapter
+
 	ErrInvalidExcludedRoutes = errors.New("excluded routes must not be nil")
 	ErrInvalidExcludedRoute  = errors.New("excluded route must be absolute and not end with a slash")
 	ErrNoRoleMapper          = errors.New("role mapper must not be nil")
@@ -40,9 +45,10 @@ type Config struct {
 // NewConfig creates and returns a new Config having default values.
 func NewConfig() *Config {
 	config := &Config{
-		Roles:           make(map[string][]Entitlement),
-		Groups:          make(map[string][]Entitlement),
-		UserAuthAdapter: NewJWTUserAuthAdapter,
+		ExcludedRoutes:  DefaultExcludedRoutes,
+		Roles:           DefaultRoles,
+		Groups:          DefaultGroups,
+		UserAuthAdapter: DefaultUserAuthAdapter,
 	}
 	config.RoleMapper = &ConfigRoleMapper{Config: config}
 	config.GroupMapper = &ConfigGroupMapper{Config: config}
