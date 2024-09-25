@@ -17,7 +17,7 @@ func (r *ReadFn[T]) Read(resource types.Resource[T]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param(types.PathParam)
 		entity, err := resource.GetService().(types.ServiceReader[T]).Read(resource, id)
-		if view := getView[T](ctx, resource); !handleServiceError(ctx, err) && view != nil {
+		if view := GetView[T](ctx, resource); !HandleServiceError(ctx, err) && view != nil {
 			ctx.Render(http.StatusOK, view.(types.ViewReader[T]).Read(resource, entity, &types.ViewOptions{ServiceMeta: types.ServiceMeta{Total: 1}}))
 		}
 	}

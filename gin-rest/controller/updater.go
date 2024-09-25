@@ -19,12 +19,12 @@ func (r *UpdateFn[T]) Update(resource types.Resource[T], partially bool) gin.Han
 		var entity T
 		id := ctx.Param(types.PathParam)
 		if err := ctx.ShouldBindJSON(&entity); err != nil {
-			handleError(ctx, err, problems.ProblemBadRequest)
+			HandleError(ctx, err, problems.ProblemBadRequest)
 			return
 		}
 
 		_, err := resource.GetService().(types.ServiceUpdater[T]).Update(resource, partially, id, &entity)
-		if !handleServiceError(ctx, err) {
+		if !HandleServiceError(ctx, err) {
 			ctx.Status(http.StatusNoContent)
 		}
 	}

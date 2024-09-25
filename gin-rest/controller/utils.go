@@ -8,59 +8,58 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mattn/go-sqlite3"
 	problems "github.com/spacecafe/gobox/gin-problems"
 	"github.com/spacecafe/gobox/gin-rest/types"
 	"gorm.io/gorm"
 )
 
 const (
-	// acceptSliceCapacity contains the initial capacity for slices to store MIME types and weights.
-	acceptSliceCapacity = 10
+	// AcceptSliceCapacity contains the initial capacity for slices to store MIME types and weights.
+	AcceptSliceCapacity = 10
 
-	// acceptQualityWeight corresponds the default quality weight for MIME types.
-	acceptQualityWeight = 1.0
+	// AcceptQualityWeight corresponds the default quality weight for MIME types.
+	AcceptQualityWeight = 1.0
 
-	// acceptQualityParameter is used to specify quality weight parameter in the header.
-	acceptQualityParameter = ";q="
+	// AcceptQualityParameter is used to specify quality weight parameter in the header.
+	AcceptQualityParameter = ";q="
 
-	// acceptSeparator is the used Separator for multiple MIME types in the header.
-	acceptSeparator = ','
+	// AcceptSeparator is the used Separator for multiple MIME types in the header.
+	AcceptSeparator = ','
 
-	// acceptHeader is the HTTP header key for the Accept header.
-	acceptHeader = "Accept"
+	// AcceptHeader is the HTTP header key for the Accept header.
+	AcceptHeader = "Accept"
 )
 
-// getView retrieves the appropriate view for a given resource based on the client's Accept header.
+// GetView retrieves the appropriate view for a given resource based on the client's Accept header.
 // It iterates through the MIME types specified in the Accept header and returns the corresponding view if found.
 // If no matching view is found, it handles the error by responding with an unsupported media type problem.
-func getView[T any](ctx *gin.Context, resource types.Resource[T]) any {
-	for _, mimeType := range parseAcceptHeader(ctx.GetHeader(acceptHeader)) {
+func GetView[T any](ctx *gin.Context, resource types.Resource[T]) any {
+	for _, mimeType := range ParseAcceptHeader(ctx.GetHeader(AcceptHeader)) {
 		if view, ok := resource.GetViews()[mimeType]; ok {
 			return view
 		}
 	}
-	handleError(ctx, problems.ProblemUnsupportedMediaType)
+	HandleError(ctx, problems.ProblemUnsupportedMediaType)
 	return nil
 }
 
-// parseAcceptHeader parses the Accept header from an HTTP request.
+// ParseAcceptHeader parses the Accept header from an HTTP request.
 // It returns a list of supported MIME types sorted by their quality weights in descending order.
-func parseAcceptHeader(acceptHeader string) []string {
+func ParseAcceptHeader(acceptHeader string) []string {
 	// Preallocate slices with a reasonable initial capacity.
-	mimeTypes := make([]string, 0, acceptSliceCapacity)
-	weights := make([]float64, 0, acceptSliceCapacity)
+	mimeTypes := make([]string, 0, AcceptSliceCapacity)
+	weights := make([]float64, 0, AcceptSliceCapacity)
 	startIndex := 0
 
 	// Loop multiple accepted mimetypes.
 	for i := 0; i <= len(acceptHeader); i++ {
-		if i == len(acceptHeader) || acceptHeader[i] == acceptSeparator {
+		if i == len(acceptHeader) || acceptHeader[i] == AcceptSeparator {
 			headerSegment := strings.TrimSpace(acceptHeader[startIndex:i])
 			mimeType := headerSegment
-			weight := acceptQualityWeight
+			weight := AcceptQualityWeight
 
 			// Receive quality weight, if set.
-			if k := strings.Index(headerSegment, acceptQualityParameter); k != -1 {
+			if k := strings.Index(headerSegment, AcceptQualityParameter); k != -1 {
 				mimeType = headerSegment[:k]
 				if value, err := strconv.ParseFloat(headerSegment[k+3:], 64); err == nil {
 					weight = value
@@ -85,9 +84,9 @@ func parseAcceptHeader(acceptHeader string) []string {
 	return mimeTypes
 }
 
-// handleError logs and aborts the request with the provided errors.
+// HandleError logs and aborts the request with the provided errors.
 // It iterates over the errors, logs them to the context, and then aborts the request.
-func handleError(ctx *gin.Context, errs ...error) {
+func HandleError(ctx *gin.Context, errs ...error) {
 	for _, err := range errs {
 		if err != nil {
 			_ = ctx.Error(err)
@@ -96,34 +95,34 @@ func handleError(ctx *gin.Context, errs ...error) {
 	ctx.Abort()
 }
 
-// handleServiceError handles common service errors and maps them to appropriate HTTP responses.
-// It checks the error type and calls handleError with the corresponding problem.
-func handleServiceError(ctx *gin.Context, err error) bool {
+// HandleServiceError handles common service errors and maps them to appropriate HTTP responses.
+// It checks the error type and calls HandleError with the corresponding problem.
+func HandleServiceError(ctx *gin.Context, err error) bool {
 	switch {
 	case err == nil:
 		return false
 	case errors.Is(err, types.ErrNotAuthorized):
-		handleError(ctx, err, problems.ProblemInsufficientPermission)
+		HandleError(ctx, err, problems.ProblemInsufficientPermission)
 	case errors.Is(err, types.ErrNotFound), errors.Is(err, gorm.ErrRecordNotFound):
-		handleError(ctx, err, problems.ProblemNoSuchKey)
+		HandleError(ctx, err, problems.ProblemNoSuchKey)
 	case errors.Is(err, types.ErrDuplicatedKey), errors.Is(err, gorm.ErrDuplicatedKey):
-		handleError(ctx, err, problems.ProblemResourceAlreadyExists)
+		HandleError(ctx, err, problems.ProblemResourceAlreadyExists)
 	case errors.Is(err, gorm.ErrCheckConstraintViolated):
-		handleError(ctx, err, problems.ProblemMissingRequiredParameter)
+		HandleError(ctx, err, problems.ProblemMissingRequiredParameter)
 
 	// Sqlite 3
 	case errors.As(err, &sqlite3.Error{}):
 		switch err.(sqlite3.Error).ExtendedCode {
 		case types.SqliteConstraintNotNull:
-			handleError(ctx, err, problems.ProblemMissingRequiredParameter)
+			HandleError(ctx, err, problems.ProblemMissingRequiredParameter)
 		case types.SqliteConstraintPrimaryKey:
-			handleError(ctx, err, problems.ProblemResourceAlreadyExists)
+			HandleError(ctx, err, problems.ProblemResourceAlreadyExists)
 		default:
-			handleError(ctx, err, problems.ProblemInternalError)
+			HandleError(ctx, err, problems.ProblemInternalError)
 		}
 
 	default:
-		handleError(ctx, err, problems.ProblemInternalError)
+		HandleError(ctx, err, problems.ProblemInternalError)
 	}
 	return true
 }
