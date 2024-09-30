@@ -23,7 +23,9 @@ func (r *UpdateFn[T]) Update(resource types.Resource[T], partially bool) gin.Han
 			return
 		}
 
-		_, err := resource.GetService().(types.ServiceUpdater[T]).Update(resource, partially, id, &entity)
+		options := NewServiceOptions(ctx)
+		options.PartialUpdate = partially
+		_, err := resource.GetService().(types.ServiceUpdater[T]).Update(resource, options, id, &entity)
 		if !HandleServiceError(ctx, err) {
 			ctx.Status(http.StatusNoContent)
 		}

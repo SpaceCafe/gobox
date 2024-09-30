@@ -16,7 +16,7 @@ type DeleteFn[T any] struct{}
 func (r *DeleteFn[T]) Delete(resource types.Resource[T]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param(types.PathParam)
-		err := resource.GetService().(types.ServiceDeleter[T]).Delete(resource, id)
+		err := resource.GetService().(types.ServiceDeleter[T]).Delete(resource, NewServiceOptions(ctx), id)
 		if !HandleServiceError(ctx, err) {
 			ctx.Status(http.StatusNoContent)
 		}

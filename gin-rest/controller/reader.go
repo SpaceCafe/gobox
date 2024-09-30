@@ -16,7 +16,7 @@ type ReadFn[T any] struct{}
 func (r *ReadFn[T]) Read(resource types.Resource[T]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param(types.PathParam)
-		entity, err := resource.GetService().(types.ServiceReader[T]).Read(resource, id)
+		entity, err := resource.GetService().(types.ServiceReader[T]).Read(resource, NewServiceOptions(ctx), id)
 		if view := GetView[T](ctx, resource); !HandleServiceError(ctx, err) && view != nil {
 			ctx.Render(http.StatusOK, view.(types.ViewReader[T]).Read(resource, entity, &types.ViewOptions{ServiceMeta: types.ServiceMeta{Total: 1}}))
 		}
