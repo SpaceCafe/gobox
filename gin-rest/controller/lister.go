@@ -15,7 +15,7 @@ type ListFn[T any] struct{}
 // rendering the view if successful.
 func (r *ListFn[T]) List(resource types.Resource[T]) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		entities, meta, err := resource.GetService().(types.ServiceLister[T]).List(resource, NewRequestParams(ctx, resource.HasReadableField).Options())
+		entities, meta, err := resource.GetService().(types.ServiceLister[T]).List(resource, NewRequestParams(ctx, NewServiceOptions(ctx), resource.HasReadableField).Options())
 		if view := GetView[T](ctx, resource); !HandleServiceError(ctx, err) && view != nil {
 			ctx.Render(http.StatusOK, view.(types.ViewLister[T]).List(resource, entities, &types.ViewOptions{ServiceMeta: *meta}))
 		}

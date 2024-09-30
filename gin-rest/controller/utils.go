@@ -8,6 +8,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mattn/go-sqlite3"
+	authorization "github.com/spacecafe/gobox/gin-authorization"
+	jwt "github.com/spacecafe/gobox/gin-jwt"
 	problems "github.com/spacecafe/gobox/gin-problems"
 	"github.com/spacecafe/gobox/gin-rest/types"
 	"gorm.io/gorm"
@@ -41,6 +44,20 @@ func GetView[T any](ctx *gin.Context, resource types.Resource[T]) any {
 	}
 	HandleError(ctx, problems.ProblemUnsupportedMediaType)
 	return nil
+}
+
+// NewServiceOptions creates a new instance of ServiceOptions.
+// It extracts the username from JWT claims and retrieves authorizations
+// from the context, then returns a pointer to a ServiceOptions struct.
+func NewServiceOptions(ctx *gin.Context) *types.ServiceOptions {
+	username, err := jwt.GetClaims(ctx).GetSubject()
+	if err != nil {
+		panic(err)
+	}
+	return &types.ServiceOptions{
+		Username:       username,
+		Authorizations: authorization.GetAuthorizations(ctx),
+	}
 }
 
 // ParseAcceptHeader parses the Accept header from an HTTP request.

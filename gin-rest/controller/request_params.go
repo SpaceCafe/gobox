@@ -27,20 +27,20 @@ type RequestParams struct {
 }
 
 // NewRequestParams creates a new RequestParams instance and binds query parameters from the context.
-// It also initializes the service options with pagination, sorting, and filtering parameters.
-func NewRequestParams(ctx *gin.Context, hasFieldFn func(string) bool) *RequestParams {
+// It also completes the service options with pagination, sorting, and filtering parameters.
+func NewRequestParams(ctx *gin.Context, options *types.ServiceOptions, hasFieldFn func(string) bool) *RequestParams {
 	request := &RequestParams{
 		Page:     DefaultPage,
 		PageSize: DefaultPageSize,
 	}
 	_ = ctx.ShouldBindQuery(request)
 
-	request.options = &types.ServiceOptions{
-		Page:     request.Page,
-		PageSize: request.PageSize,
-		Filters:  parseFilter(ctx, hasFieldFn),
-		Sorts:    request.parseSort(hasFieldFn),
-	}
+	request.options = options
+	request.options.Page = request.Page
+	request.options.PageSize = request.PageSize
+	request.options.Filters = parseFilter(ctx, hasFieldFn)
+	request.options.Sorts = request.parseSort(hasFieldFn)
+
 	return request
 }
 

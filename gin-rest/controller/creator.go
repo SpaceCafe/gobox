@@ -22,7 +22,7 @@ func (r *CreateFn[T]) Create(resource types.Resource[T]) gin.HandlerFunc {
 			return
 		}
 
-		createdEntity, err := resource.GetService().(types.ServiceCreator[T]).Create(resource, &entity)
+		createdEntity, err := resource.GetService().(types.ServiceCreator[T]).Create(resource, NewServiceOptions(ctx), &entity)
 		if view := GetView[T](ctx, resource); !HandleServiceError(ctx, err) && view != nil {
 			url := ctx.Request.URL.JoinPath(resource.PrimaryValue(createdEntity))
 			ctx.Header("Location", url.String())

@@ -1,5 +1,9 @@
 package types
 
+import (
+	authorizations "github.com/spacecafe/gobox/gin-authorization"
+)
+
 // FilterOperator represents the type of operation to perform for filtering.
 type FilterOperator string
 
@@ -48,6 +52,9 @@ var (
 // ServiceOptions contains options for querying services, including pagination, filtering, and sorting.
 type ServiceOptions struct {
 
+	// Username is the name of the user making the query.
+	Username string
+
 	// Page is the current page number for pagination.
 	Page int
 
@@ -59,6 +66,12 @@ type ServiceOptions struct {
 
 	// Sorts is a slice of sort options to apply to the query.
 	Sorts *[]SortOption
+
+	// Authorizations contains the authorization details of the user making the query.
+	Authorizations authorizations.Authorizations
+
+	// PartialUpdate indicates whether the update should be partial.
+	PartialUpdate bool
 }
 
 // FilterOption represents a single filter criterion for querying.
