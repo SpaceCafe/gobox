@@ -9,9 +9,9 @@ require (
 	github.com/go-playground/validator/v10 v10.22.1
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-sqlite3 v1.14.23
-	github.com/spacecafe/gobox/gin-authorization v0.0.0-20240924123037-43d633b0241e
-	github.com/spacecafe/gobox/gin-jwt v0.0.0-20240924115451-a477cc97e5f0
-	github.com/spacecafe/gobox/gin-problems v0.0.0-20240924115451-a477cc97e5f0
+	github.com/spacecafe/gobox/gin-authorization v0.0.0-20240930105727-d63a320d9925
+	github.com/spacecafe/gobox/gin-jwt v0.0.0-20240925075922-32e570fa5cda
+	github.com/spacecafe/gobox/gin-problems v0.0.0-20240925075922-32e570fa5cda
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	gopkg.in/yaml.v3 v3.0.1
@@ -43,7 +43,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/spacecafe/gobox/logger v0.0.0-20240924115451-a477cc97e5f0 // indirect
+	github.com/spacecafe/gobox/logger v0.0.0-20240925075922-32e570fa5cda // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	golang.org/x/arch v0.10.0 // indirect
