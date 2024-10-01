@@ -62,6 +62,9 @@ type Resource[T any] struct {
 	// namingStrategy is used to define naming conventions for the resource.
 	namingStrategy *types.NamingStrategy
 
+	// Group is a reference to the used gin.RouterGroup of the resource.
+	Group *gin.RouterGroup
+
 	// Authorization indicates whether the resource requires authorization.
 	Authorization bool
 }
@@ -151,6 +154,11 @@ func (r *Resource[T]) GetViews() map[string]any {
 	return r.Views
 }
 
+// GetGroup returns the used gin.RouterGround of the resource.
+func (r *Resource[T]) GetGroup() *gin.RouterGroup {
+	return r.Group
+}
+
 // HasField checks if the schema has a field with the given name.
 func (r *Resource[T]) HasField(name string) bool {
 	_, ok := r.schema.FieldsByDBName[name]
@@ -201,38 +209,38 @@ func (r *Resource[T]) applyRoutes() {
 	}
 
 	// Set absolute base path of this resource.
-	group := r.rest.router.Group("/" + r.Name())
-	r.basePath = &url.URL{Path: group.BasePath()}
+	r.Group = r.rest.router.Group("/" + r.Name())
+	r.basePath = &url.URL{Path: r.Group.BasePath()}
 
 	if creator, ok := r.Controller.(types.ControllerCreator[T]); ok && checkServiceAndViews[T, types.ServiceCreator[T], types.ViewCreator[T]](r) {
-		group.POST(types.PathWithoutID, authFunc(r.Name(), authorization.CreateAction), creator.Create(r))
+		r.Group.POST(types.PathWithoutID, authFunc(r.Name(), authorization.CreateAction), creator.Create(r))
 		r.capabilities[types.PathWithoutID] = append(r.capabilities[types.PathWithoutID], http.MethodPost)
 	}
 
 	if reader, ok := r.Controller.(types.ControllerReader[T]); ok && checkServiceAndViews[T, types.ServiceReader[T], types.ViewReader[T]](r) {
-		group.GET(types.PathWithID, authFunc(r.Name(), authorization.ReadAction), reader.Read(r))
+		r.Group.GET(types.PathWithID, authFunc(r.Name(), authorization.ReadAction), reader.Read(r))
 		r.capabilities[types.PathWithID] = append(r.capabilities[types.PathWithID], http.MethodGet)
 	}
 
 	if lister, ok := r.Controller.(types.ControllerLister[T]); ok && checkServiceAndViews[T, types.ServiceLister[T], types.ViewLister[T]](r) {
-		group.GET(types.PathWithoutID, authFunc(r.Name(), authorization.ListAction), lister.List(r))
+		r.Group.GET(types.PathWithoutID, authFunc(r.Name(), authorization.ListAction), lister.List(r))
 		r.capabilities[types.PathWithoutID] = append(r.capabilities[types.PathWithoutID], http.MethodGet)
 	}
 
 	if updater, ok := r.Controller.(types.ControllerUpdater[T]); ok && checkServiceAndViews[T, types.ServiceUpdater[T], types.ViewUpdater[T]](r) {
-		group.PUT(types.PathWithID, authFunc(r.Name(), authorization.UpdateAction), updater.Update(r, false))
-		group.PATCH(types.PathWithID, authFunc(r.Name(), authorization.UpdateAction), updater.Update(r, true))
+		r.Group.PUT(types.PathWithID, authFunc(r.Name(), authorization.UpdateAction), updater.Update(r, false))
+		r.Group.PATCH(types.PathWithID, authFunc(r.Name(), authorization.UpdateAction), updater.Update(r, true))
 		r.capabilities[types.PathWithID] = append(r.capabilities[types.PathWithID], http.MethodPut, http.MethodPatch)
 	}
 
 	if deleter, ok := r.Controller.(types.ControllerDeleter[T]); ok && checkServiceAndViews[T, types.ServiceDeleter[T], types.ViewDeleter[T]](r) {
-		group.DELETE(types.PathWithID, authFunc(r.Name(), authorization.DeleteAction), deleter.Delete(r))
+		r.Group.DELETE(types.PathWithID, authFunc(r.Name(), authorization.DeleteAction), deleter.Delete(r))
 		r.capabilities[types.PathWithID] = append(r.capabilities[types.PathWithID], http.MethodDelete)
 	}
 
 	if capabilitator, ok := r.Controller.(types.ControllerCapabilitator); ok {
 		for relPath, allows := range r.capabilities {
-			group.OPTIONS(relPath, authFunc(r.Name(), authorization.CapabilitiesAction), capabilitator.Capability(strings.Join(allows, mimeSeparator), joinMapKeys(r.Views, mimeSeparator)))
+			r.Group.OPTIONS(relPath, authFunc(r.Name(), authorization.CapabilitiesAction), capabilitator.Capability(strings.Join(allows, mimeSeparator), joinMapKeys(r.Views, mimeSeparator)))
 		}
 	}
 }

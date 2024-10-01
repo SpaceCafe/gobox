@@ -3,6 +3,7 @@ package types
 import (
 	"net/url"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
@@ -38,6 +39,9 @@ type Resource[T any] interface {
 
 	// GetViews returns a map of views associated with the resource.
 	GetViews() map[string]any
+
+	// GetGroup returns the used gin.RouterGround of the resource.
+	GetGroup() *gin.RouterGroup
 
 	// HasField checks if the resource has a specific field.
 	HasField(name string) bool
