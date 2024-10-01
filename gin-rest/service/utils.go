@@ -6,9 +6,9 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// applyOptions applies pagination, sorting, and filtering options to a GORM database query.
+// ApplyOptions applies pagination, sorting, and filtering options to a GORM database query.
 // It returns a modified gorm.DB instance with the applied options.
-func applyOptions(db *gorm.DB, options *types.ServiceOptions) (tx *gorm.DB) {
+func ApplyOptions(db *gorm.DB, options *types.ServiceOptions) (tx *gorm.DB) {
 	tx = db.Limit(options.PageSize).Offset((options.Page - 1) * options.PageSize)
 
 	for _, option := range *options.Sorts {

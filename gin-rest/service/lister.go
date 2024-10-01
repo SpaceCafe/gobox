@@ -13,7 +13,7 @@ type ListFn[T any] struct{}
 // and returns the entities, metadata, and any error encountered.
 func (r *ListFn[T]) List(resource types.Resource[T], options *types.ServiceOptions) (entities *[]T, meta *types.ServiceMeta, err error) {
 	entities = &[]T{}
-	result := applyOptions(resource.DB(), options).Preload(clause.Associations).Find(entities)
+	result := ApplyOptions(resource.DB(), options).Preload(clause.Associations).Find(entities)
 	return entities, &types.ServiceMeta{
 		Page:     options.Page,
 		PageSize: options.PageSize,
