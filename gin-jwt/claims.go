@@ -65,6 +65,11 @@ type Claims struct {
 	// https://www.rfc-editor.org/rfc/rfc9396.html#section-9.1
 	AuthorizationDetails []AuthorizationDetail `json:"authorization_details"`
 
+	// PrefferedUsername is the shorthand name by which the End-User wishes to be referred to.
+	// OpenID Connect Core 1.0, Section 5.1
+	// https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
+	PreferredUsername string `json:"preferred_username"`
+
 	// Name is the user's full name.
 	// OpenID Connect Core 1.0, Section 5.1
 	// https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
@@ -106,6 +111,11 @@ func NewClaims(config *Config, subject string) *Claims {
 			IssuedAt:  jwt_.NewNumericDate(time.Now()),
 		},
 	}
+}
+
+// GetPreferredUsername returns the preferred username.
+func (r *Claims) GetPreferredUsername() (string, error) {
+	return r.PreferredUsername, nil
 }
 
 // GetName returns the user's full name.
