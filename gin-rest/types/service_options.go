@@ -52,8 +52,8 @@ var (
 // ServiceOptions contains options for querying services, including pagination, filtering, and sorting.
 type ServiceOptions struct {
 
-	// Username is the name of the user making the query.
-	Username string
+	// UserID referes to the user making the query.
+	UserID string
 
 	// Page is the current page number for pagination.
 	Page int

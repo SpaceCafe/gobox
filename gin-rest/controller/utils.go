@@ -50,12 +50,12 @@ func GetView[T any](ctx *gin.Context, resource types.Resource[T]) any {
 // It extracts the username from JWT claims and retrieves authorizations
 // from the context, then returns a pointer to a ServiceOptions struct.
 func NewServiceOptions(ctx *gin.Context) *types.ServiceOptions {
-	username, err := jwt.GetClaims(ctx).GetSubject()
+	subject, err := jwt.GetClaims(ctx).GetSubject()
 	if err != nil {
 		panic(err)
 	}
 	return &types.ServiceOptions{
-		Username:       username,
+		UserID:         subject,
 		Authorizations: authorization.GetAuthorizations(ctx),
 	}
 }
