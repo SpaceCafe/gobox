@@ -51,7 +51,7 @@ type Config struct {
 	RedisTTL time.Duration `json:"redis_ttl" yaml:"redis_ttl" mapstructure:"redis_ttl"`
 
 	// Timeout represents the amount of time allowed to wait for a job.
-	Timeout time.Duration `json:"wait_timeout" yaml:"wait_timeout" mapstructure:"wait_timeout"`
+	Timeout time.Duration `json:"timeout" yaml:"timeout" mapstructure:"timeout"`
 
 	// Logger specifies the used logger instance.
 	Logger *logger.Logger
