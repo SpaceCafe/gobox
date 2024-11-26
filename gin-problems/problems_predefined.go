@@ -119,4 +119,10 @@ var (
 		http.StatusBadRequest,
 		"The resource is missing a required parameter. Check the service documentation and try again.",
 	)
+	ProblemNotImplemented = NewProblem(
+		"",
+		http.StatusText(http.StatusNotImplemented),
+		http.StatusNotImplemented,
+		"The requested functionality is not implemented.",
+	)
 )
