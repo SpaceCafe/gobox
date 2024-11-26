@@ -4,13 +4,15 @@ import (
 	"net/http"
 	"strings"
 	"unicode"
+
+	"github.com/gin-gonic/gin"
 )
 
 type IProblem interface {
-	Error() string
-	WithError(error) *Problem
-	setError(error)
-	setInstance(string)
+	Error() (msg string)
+	WithError(err error) (newProblem *Problem)
+	Abort(ctx *gin.Context)
+	setError(err error)
 }
 
 // Problem is used for a standardised error handling for the REST API that the IETF
@@ -90,17 +92,24 @@ func NewProblemWithError(problemType string, title string, status int, detail st
 }
 
 // Error returns a formatted error message for the Problem struct type.
-func (r *Problem) Error() string {
+func (r *Problem) Error() (msg string) {
 	return r.Title + ": " + r.Detail
 }
 
-func (r *Problem) WithError(err error) *Problem {
+// WithError creates a copy of the Problem instance and sets its error field.
+func (r *Problem) WithError(err error) (newProblem *Problem) {
 	p := *r
 	p.setError(err)
 	return &p
 }
 
-// SetError appends the human-readable error message to the detail field of the problem.
+// Abort aborts the current HTTP request and attaches the Problem instance to the context's error.
+func (r *Problem) Abort(ctx *gin.Context) {
+	_ = ctx.Error(r)
+	ctx.Abort()
+}
+
+// setError appends the human-readable error message to the detail field of the problem.
 func (r *Problem) setError(err error) {
 	if err != nil {
 		r.Detail = r.Detail + "\n\nReason: " + err.Error()
