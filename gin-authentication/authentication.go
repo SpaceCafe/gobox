@@ -3,6 +3,7 @@ package authentication
 import (
 	"crypto/subtle"
 	"errors"
+	"math"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -48,7 +49,7 @@ func New(config *Config) gin.HandlerFunc {
 		// If password matches, continue handling original request as user is authenticated.
 		if password != "" {
 			for i := range config.APIKeys {
-				if comparePasswords([]byte(config.APIKeys[i]), []byte(password)) {
+				if ComparePasswords([]byte(config.APIKeys[i]), []byte(password)) {
 					authenticated = true
 				}
 			}
@@ -56,7 +57,7 @@ func New(config *Config) gin.HandlerFunc {
 
 		// Retrieve the password from HTTP Basic Auth header if they exist.
 		if username, password, ok := ctx.Request.BasicAuth(); ok {
-			if _, ok = config.Users[username]; ok && comparePasswords([]byte(config.Users[username]), []byte(password)) {
+			if _, ok = config.Users[username]; ok && ComparePasswords([]byte(config.Users[username]), []byte(password)) {
 				authenticated = true
 			}
 		}
@@ -75,8 +76,8 @@ func New(config *Config) gin.HandlerFunc {
 	}
 }
 
-// comparePasswords compares an inputted password with a hashed password using one of the functions in compareFuncs.
-func comparePasswords(hashedPassword, password []byte) bool {
+// ComparePasswords compares an inputted password with a hashed password using one of the functions in compareFuncs.
+func ComparePasswords(hashedPassword, password []byte) bool {
 	// Deny empty passwords.
 	if len(hashedPassword) == 0 || len(password) == 0 {
 		return false
@@ -95,8 +96,21 @@ func comparePasswords(hashedPassword, password []byte) bool {
 
 // compareBlankPasswords checks the provided passwords using constant time comparison to prevent timing attacks.
 func compareBlankPasswords(hashedPassword, password []byte) error {
+	lengthStored := len(hashedPassword)
+	lengthUser := len(password)
+
+	// Check for potential overflow and ensure the lengths are equal using constant time comparison.
+	if lengthStored > math.MaxInt32 || lengthUser > math.MaxInt32 || subtle.ConstantTimeEq(int32(lengthStored), int32(lengthUser)) == 0 {
+
+		// Perform a dummy comparison to mitigate timing attacks if the lengths do not match.
+		subtle.ConstantTimeCompare(password, password)
+		return ErrInvalidPassword
+	}
+
+	// Compare the hashed password with the user-provided password using constant time comparison.
 	if subtle.ConstantTimeCompare(hashedPassword, password) == 1 {
 		return nil
 	}
+
 	return ErrInvalidPassword
 }

@@ -158,13 +158,103 @@ func Test_compareBlankPasswords(t *testing.T) {
 		args    args
 		wantErr error
 	}{
-		{"different passwords", args{[]byte("another secret"), []byte("secret")}, ErrInvalidPassword},
-		{"same passwords", args{[]byte("secret"), []byte("secret")}, nil},
+		{
+			name: "correct password",
+			args: args{
+				hashedPassword: []byte("password123"),
+				password:       []byte("password123"),
+			},
+			wantErr: nil,
+		},
+		{
+			name: "incorrect password",
+			args: args{
+				hashedPassword: []byte("password123"),
+				password:       []byte("wrongpassword"),
+			},
+			wantErr: ErrInvalidPassword,
+		},
+		{
+			name: "empty password and hash",
+			args: args{
+				hashedPassword: []byte{},
+				password:       []byte{},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "nil password",
+			args: args{
+				hashedPassword: []byte("password123"),
+				password:       nil,
+			},
+			wantErr: ErrInvalidPassword,
+		},
+		{
+			name: "nil hash",
+			args: args{
+				hashedPassword: nil,
+				password:       []byte("password123"),
+			},
+			wantErr: ErrInvalidPassword,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := compareBlankPasswords(tt.args.hashedPassword, tt.args.password)
 			assert.ErrorIs(t, tt.wantErr, err)
+		})
+	}
+}
+
+func Benchmark_compareBlankPasswords(b *testing.B) {
+	tests := []struct {
+		name           string
+		hashedPassword []byte
+		password       []byte
+	}{
+		{
+			name:           "correct",
+			hashedPassword: []byte("password123"),
+			password:       []byte("password123"),
+		},
+		{
+			name:           "incorrect",
+			hashedPassword: []byte("wrongpassword"),
+			password:       []byte("password123"),
+		},
+		{
+			name:           "incorrect long",
+			hashedPassword: []byte("veryveryveryveryverylongpassword"),
+			password:       []byte("password123"),
+		},
+		{
+			name:           "incorrect short",
+			hashedPassword: []byte("p"),
+			password:       []byte("password123"),
+		},
+		{
+			name:           "timing short",
+			hashedPassword: []byte("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+			password:       []byte("aaaaaaaaaaTaaaaaaaaaaaaaaaaaaaa"),
+		},
+		{
+			name:           "timing medium",
+			hashedPassword: []byte("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+			password:       []byte("aaaaaaaaaaaaaaaaaaaaTaaaaaaaaaa"),
+		},
+		{
+			name:           "timing long",
+			hashedPassword: []byte("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+			password:       []byte("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaT"),
+		},
+	}
+
+	for _, tt := range tests {
+		b.Run(tt.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				_ = compareBlankPasswords(tt.hashedPassword, tt.password)
+			}
 		})
 	}
 }
@@ -195,7 +285,7 @@ func Test_comparePasswords(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := comparePasswords(tt.args.hashedPassword, tt.args.password)
+			got := ComparePasswords(tt.args.hashedPassword, tt.args.password)
 			assert.Equalf(t, tt.want, got, "hashedPassword: %s, password: %s", tt.args.hashedPassword, tt.args.password)
 		})
 	}
