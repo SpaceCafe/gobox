@@ -289,7 +289,7 @@ func (r *RedisJobManager) drainWorkerQueue() {
 func (r *RedisJobManager) watchJobsQueue() {
 	r.config.Logger.Infof("watching jobs queue '%s'", r.jobsQueue)
 	for {
-		jobID, err := r.client.BLMove(r.ctx, r.jobsQueue, r.workerQueue, "RIGHT", "LEFT", 0).Result()
+		jobID, err := r.client.BLMove(r.ctx, r.jobsQueue, r.workerQueue, "RIGHT", "LEFT", time.Second).Result()
 		if err != nil {
 			r.config.Logger.Warnf("failed to watch jobs queue '%s': %v", jobID, err)
 			continue
