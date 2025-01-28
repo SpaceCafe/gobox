@@ -69,10 +69,16 @@ func (r *Terminator) ContextTracking() (ctx context.Context) {
 	return r.ctx
 }
 
-// NoTracking adds to the waitGroup without returning the context.
+// Tracking adds to the waitGroup without returning the context.
 // Therefore, the application is terminated after Config.Timeout.
-func (r *Terminator) NoTracking() {
+func (r *Terminator) Tracking() {
 	r.waitGroup.Add(1)
+}
+
+// Context returns the context but does not track the goroutine.
+// This is useful, when you need the context outside the termination flow.
+func (r *Terminator) Context() (ctx context.Context) {
+	return r.ctx
 }
 
 // Wait blocks until all tracked goroutines have finished.
