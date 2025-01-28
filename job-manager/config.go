@@ -2,6 +2,7 @@ package job_manager
 
 import (
 	"errors"
+	"os"
 	"slices"
 	"time"
 
@@ -19,6 +20,7 @@ const (
 var (
 	validBackends = []string{"redis"}
 
+	ErrNoWorkerName     = errors.New("worker name cannot be empty")
 	ErrInvalidBackend   = errors.New("backend is not valid")
 	ErrNoHost           = errors.New("host cannot be empty")
 	ErrInvalidPort      = errors.New("port must be a number between 1 and 65535")
@@ -29,6 +31,8 @@ var (
 
 // Config holds configuration related to the job manager.
 type Config struct {
+	// WorkerName is the name of the worker, defaulting to the hostname.
+	WorkerName string `json:"worker_name" yaml:"worker_name" mapstructure:"worker_name"`
 
 	// Backend specifies the type of backend to be used.
 	Backend string `json:"backend" yaml:"backend" mapstructure:"backend"`
@@ -66,6 +70,7 @@ func NewConfig(log *logger.Logger) *Config {
 		RedisTTL:       DefaultRedisTTL,
 		Timeout:        DefaultTimeout,
 	}
+	config.WorkerName, _ = os.Hostname()
 
 	if log != nil {
 		config.Logger = log
@@ -79,12 +84,12 @@ func NewConfig(log *logger.Logger) *Config {
 // Validate ensures the all necessary configurations are filled and within valid confines.
 // Any misconfiguration results in well-defined standardized errors.
 func (r *Config) Validate() error {
-	if !slices.Contains(validBackends, r.Backend) {
-		return ErrInvalidBackend
+	if r.WorkerName == "" {
+		return ErrNoWorkerName
 	}
 
-	if r.Timeout <= 0 {
-		return ErrInvalidTimeout
+	if !slices.Contains(validBackends, r.Backend) {
+		return ErrInvalidBackend
 	}
 
 	switch r.Backend {
@@ -104,6 +109,10 @@ func (r *Config) Validate() error {
 		if r.RedisTTL <= 0 {
 			return ErrInvalidRedisTTL
 		}
+	}
+
+	if r.Timeout <= 0 {
+		return ErrInvalidTimeout
 	}
 
 	return nil
