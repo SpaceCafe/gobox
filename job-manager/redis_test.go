@@ -8,6 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	onCompletionHookCalled = false
+)
+
 type TestJob struct {
 	ExitCode int
 	StdIn    string
@@ -19,26 +23,14 @@ func NewTestJob() Job {
 	return &TestJob{}
 }
 
-func (r *TestJob) IsPending() bool {
-	return true
-}
-
-func (r *TestJob) IsActive() bool {
-	return true
-}
-
-func (r *TestJob) IsDone() bool {
-	return r.ExitCode >= 0
-}
-
-func (r *TestJob) Progress() int {
-	return 0
-}
-
 func (r *TestJob) Start() error {
 	r.ExitCode = 0
 	r.StdOut = r.StdIn
 	return nil
+}
+
+func (r *TestJob) OnCompletion() {
+	onCompletionHookCalled = true
 }
 
 func TestNewRedisJobManager(t *testing.T) {
@@ -63,10 +55,16 @@ func TestNewRedisJobManager(t *testing.T) {
 	assert.NotNil(t, jobID)
 
 	time.Sleep(1 * time.Second)
+	state, progress, msgID := jm.GetJobProgress(jobID, nil)
+	assert.Equal(t, StateCompleted, state)
+	assert.Equal(t, uint64(0), progress)
+	assert.NotNil(t, msgID)
+
 	err = jm.GetJob(jobID, job)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, job.ExitCode)
 	assert.Equal(t, "hello world", job.StdOut)
+	assert.True(t, onCompletionHookCalled)
 
 	job = &TestJob{
 		ExitCode: -1,

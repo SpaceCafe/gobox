@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"sync"
 	"time"
 
@@ -14,9 +15,11 @@ import (
 )
 
 const (
-	RedisMonitorInterval = time.Second * 1
-	RedisQueue           = "new"
-	RedisChannelDone     = "done"
+	RedisMonitorInterval     = time.Second * 1
+	RedisQueuePendingJobs    = "pending"
+	RedisQueueCompletedJobs  = "completed"
+	RedisStreamJobProgress   = "progress"
+	RedisChannelJobCompleted = "completed"
 )
 
 var (
@@ -28,11 +31,14 @@ var (
 // RedisJobManager manages jobs using Redis as the backend.
 // It handles job creation, monitoring, and retrieval.
 type RedisJobManager struct {
-	// jobsQueue holds the name of the queue used for storing jobs.
-	jobsQueue string
+	// pendingJobsQueue holds the name of the queue used for pushing new jobs.
+	pendingJobsQueue string
 
-	// workerQueue holds the name of the queue used for managing workers.
-	workerQueue string
+	// completedJobsQueue holds the name of the queue used for fetching completed jobs.
+	completedJobsQueue string
+
+	// processingJobsQueue holds the name of the queue used by workers to move jobs from pending to processing state.
+	processingJobsQueue string
 
 	// ctx is the context for managing the lifecycle of jobs.
 	ctx context.Context
@@ -58,19 +64,27 @@ type RedisJobManager struct {
 
 	// ready indicates whether the job manager is ready to process jobs.
 	ready bool
+
+	// hasJobHooks indicates whether the job type implements JobHooks interface.
+	hasJobHooks bool
 }
 
 // NewRedisJobManager initializes a new RedisJobManager with the given configuration.
 // It returns the job manager instance and any error encountered during initialization.
 func NewRedisJobManager(config *Config, jobFactory func() Job) (jobManager *RedisJobManager, err error) {
 	jobManager = &RedisJobManager{
-		jobsQueue:   fmt.Sprintf("%s:%s", config.RedisNamespace, RedisQueue),
-		workerQueue: fmt.Sprintf("%s:%s", config.RedisNamespace, config.WorkerName),
-		jobFactory:  jobFactory,
-		config:      config,
-		ready:       false,
+		pendingJobsQueue:    config.RedisNamespace + ":" + RedisQueuePendingJobs,
+		completedJobsQueue:  config.RedisNamespace + ":" + RedisQueueCompletedJobs,
+		processingJobsQueue: config.RedisNamespace + ":" + config.WorkerName,
+		jobFactory:          jobFactory,
+		config:              config,
+		ready:               false,
+		hasJobHooks:         false,
 	}
 	jobManager.readyCond = sync.NewCond(&jobManager.readyMutex)
+	if _, ok := jobFactory().(JobHooks); ok {
+		jobManager.hasJobHooks = true
+	}
 	return
 }
 
@@ -88,6 +102,10 @@ func (r *RedisJobManager) Start(ctx context.Context, done func()) (err error) {
 
 	r.createClient()
 	go r.monitorClientConnection()
+	if r.hasJobHooks {
+		go r.watchCompletedJobsQueue()
+	}
+
 	return
 }
 
@@ -98,8 +116,8 @@ func (r *RedisJobManager) StartWorker(ctx context.Context, done func()) (err err
 		return
 	}
 	go func() {
-		r.drainWorkerQueue()
-		r.watchJobsQueue()
+		r.drainProcessingJobsQueue()
+		r.watchPendingJobsQueue()
 	}()
 	return
 }
@@ -162,10 +180,10 @@ func (r *RedisJobManager) setReady(ready bool) {
 	r.readyCond.Broadcast()
 }
 
-// SetJob stores a (new) job to the Redis store.
+// SetJob stores a job to the Redis store.
 func (r *RedisJobManager) SetJob(jobID string, job Job) (err error) {
 	r.config.Logger.Debugf("adding job '%s': %+v", jobID, job)
-	_, err = r.client.JSONSet(r.ctx, fmt.Sprintf("%s:%s", r.config.RedisNamespace, jobID), "$", job).Result()
+	_, err = r.client.JSONSet(r.ctx, r.config.RedisNamespace+":"+jobID, "$", job).Result()
 	if err != nil {
 		r.config.Logger.Warnf("failed to add job '%s': %v", jobID, err)
 	}
@@ -180,12 +198,61 @@ func (r *RedisJobManager) GetJob(jobID string, job Job) (err error) {
 
 	r.WaitUntilReady()
 
-	jobString, err := r.client.JSONGet(r.ctx, fmt.Sprintf("%s:%s", r.config.RedisNamespace, jobID)).Result()
+	jobString, err := r.client.JSONGet(r.ctx, r.config.RedisNamespace+":"+jobID).Result()
 	if err != nil {
 		r.config.Logger.Warnf("failed to get job '%s': %v", jobID, err)
 		return
 	}
 	return json.Unmarshal([]byte(jobString), job)
+}
+
+// GetJobProgress retrieves the current state and progress of a job identified by jobID.
+// It uses the lastArtefact to determine where to start reading the stream from.
+// The function returns the current state, progress, and the last message ID as an artefact.
+func (r *RedisJobManager) GetJobProgress(jobID string, lastArtefact any) (state string, progress uint64, artefact any) {
+	lastMessageID, ok := lastArtefact.(string)
+	if !ok {
+		lastMessageID = "0"
+	}
+
+	stream, err := r.client.XRead(r.ctx, &redis.XReadArgs{
+		Streams: []string{r.config.RedisNamespace + ":" + jobID + ":" + RedisStreamJobProgress, lastMessageID},
+		Block:   0,
+	}).Result()
+
+	// If the stream is empty or there's an error, return the default values.
+	if err != nil || len(stream) == 0 {
+		return StatePending, 0, "0"
+	}
+
+	lastMessage := stream[0].Messages[len(stream[0].Messages)-1]
+	artefact = lastMessage.ID
+
+	// Parse the message data to extract the state and progress.
+	if state, ok = lastMessage.Values["state"].(string); !ok || state == "" {
+		state = StateRunning
+	}
+
+	// Convert progress from string to uint.
+	progressStr, _ := lastMessage.Values["progress"].(string)
+	progress, _ = strconv.ParseUint(progressStr, 10, 8)
+
+	return
+}
+
+// SetJobProgress updates the progress of a job identified by jobID in the Redis stream.
+// It sets the state and progress values for the specified job.
+func (r *RedisJobManager) SetJobProgress(jobID, state string, progress uint64) {
+	_, err := r.client.XAdd(r.ctx, &redis.XAddArgs{
+		Stream: r.config.RedisNamespace + ":" + jobID + ":" + RedisStreamJobProgress,
+		Values: map[string]interface{}{
+			"state":    state,
+			"progress": progress,
+		},
+	}).Result()
+	if err != nil {
+		r.config.Logger.Warnf("failed to set job '%s' progress: %v", jobID, err)
+	}
 }
 
 // AddJob adds a job to the Redis store and returns the job ID.
@@ -211,7 +278,7 @@ func (r *RedisJobManager) AddJobAndWait(job Job) (err error) {
 
 	r.WaitUntilReady()
 
-	subscription := r.client.Subscribe(r.ctx, fmt.Sprintf("%s:%s:%s", r.config.RedisNamespace, jobID, RedisChannelDone))
+	subscription := r.client.Subscribe(r.ctx, r.config.RedisNamespace+":"+jobID.String()+":"+RedisChannelJobCompleted)
 	defer func(subscription *redis.PubSub) {
 		_ = subscription.Close()
 	}(subscription)
@@ -221,13 +288,14 @@ func (r *RedisJobManager) AddJobAndWait(job Job) (err error) {
 		return
 	}
 
-	messages := subscription.Channel()
+	// Receive job completion message
+	message := subscription.Channel()
 	select {
-	case <-messages:
-		r.config.Logger.Debugf("job '%s' is done", jobID)
+	case <-message:
+		r.config.Logger.Debugf("job '%s' was completed", jobID)
 		return r.GetJob(jobID.String(), job)
 	case <-time.After(r.config.Timeout):
-		r.config.Logger.Infof("job '%s' is timed out", jobID)
+		r.config.Logger.Infof("job '%s' was timed out", jobID)
 		return ErrTimeoutExceeded
 	case <-r.ctx.Done():
 		return ErrJobManagerTerminated
@@ -242,40 +310,50 @@ func (r *RedisJobManager) addJob(jobID string, job Job) (err error) {
 		return
 	}
 
-	_, err = r.client.Expire(r.ctx, fmt.Sprintf("%s:%s", r.config.RedisNamespace, jobID), r.config.RedisTTL).Result()
+	_, err = r.client.Expire(r.ctx, r.config.RedisNamespace+":"+jobID, r.config.RedisTTL).Result()
 	if err != nil {
 		r.config.Logger.Warnf("failed to add ttl to job '%s': %v", jobID, err)
 		return
 	}
 
-	_, err = r.client.LPush(r.ctx, fmt.Sprintf("%s:%s", r.config.RedisNamespace, RedisQueue), jobID).Result()
+	_, err = r.client.LPush(r.ctx, r.pendingJobsQueue, jobID).Result()
 	if err != nil {
 		r.config.Logger.Warnf("failed to add job '%s' to queue: %v", jobID, err)
 	}
 	return
 }
 
-// publishJob publishes a job completion message to the Redis channel.
-func (r *RedisJobManager) publishJob(jobID string) (err error) {
+// sendJobCompletionMessage publishes a job completion message to the global completion queue to initiate
+// post-processing tasks and job-specific completion channel to notify any synchronously waiting subscribers.
+func (r *RedisJobManager) sendJobCompletionMessage(jobID string) {
 	var subscribers int64
-	subscribers, err = r.client.Publish(r.ctx, fmt.Sprintf("%s:%s:%s", r.config.RedisNamespace, jobID, RedisChannelDone), "1").Result()
+	var err error
+	subscribers, err = r.client.Publish(r.ctx, r.config.RedisNamespace+":"+jobID+":"+RedisChannelJobCompleted, "1").Result()
 	if err != nil {
-		return
+		r.config.Logger.Warnf("failed to send completion message to job '%s': %v", jobID, err)
+	} else {
+		r.config.Logger.Debugf("send completion message of job '%s' with %d subscribers", jobID, subscribers)
 	}
-	r.config.Logger.Debugf("published job '%s' with %d subscribers", jobID, subscribers)
+
+	if r.hasJobHooks {
+		_, err = r.client.LPush(r.ctx, r.completedJobsQueue, jobID).Result()
+		if err != nil {
+			r.config.Logger.Warnf("failed to add completion message to job '%s' to completed jobs queue: %v", jobID, err)
+		}
+	}
 	return
 }
 
-// drainWorkerQueue processes all remaining jobs in the worker queue that were left over
+// drainProcessingJobsQueue processes all remaining jobs in the worker queue that were left over
 // from the previous shutdown or restart.
-func (r *RedisJobManager) drainWorkerQueue() {
-	r.config.Logger.Infof("draining worker queue '%s'", r.workerQueue)
+func (r *RedisJobManager) drainProcessingJobsQueue() {
+	r.config.Logger.Infof("drain processing jobs queue '%s'", r.processingJobsQueue)
 	for {
 		select {
 		case <-r.ctx.Done():
 			return
 		default:
-			jobID, err := r.client.RPop(r.ctx, r.workerQueue).Result()
+			jobID, err := r.client.RPop(r.ctx, r.processingJobsQueue).Result()
 			if err != nil {
 				return
 			}
@@ -284,25 +362,55 @@ func (r *RedisJobManager) drainWorkerQueue() {
 	}
 }
 
-// watchJobsQueue monitors the jobs queue and transfers new jobs to the worker queue
+// watchPendingJobsQueue monitors the pending jobs queue and transfers new jobs to the processing jobs queue
 // to ensure they are processed even after a system shutdown or restart.
-func (r *RedisJobManager) watchJobsQueue() {
-	r.config.Logger.Infof("watching jobs queue '%s'", r.jobsQueue)
+func (r *RedisJobManager) watchPendingJobsQueue() {
+	r.config.Logger.Infof("watch pending jobs queue '%s'", r.pendingJobsQueue)
 	for {
 		select {
 		case <-r.ctx.Done():
 			return
 		default:
-			jobID, err := r.client.BLMove(r.ctx, r.jobsQueue, r.workerQueue, "RIGHT", "LEFT", time.Second).Result()
+			jobID, err := r.client.BLMove(r.ctx, r.pendingJobsQueue, r.processingJobsQueue, "RIGHT", "LEFT", time.Second).Result()
 			if errors.Is(err, redis.Nil) {
 				continue
 			}
 			if err != nil {
-				r.config.Logger.Warnf("failed to watch jobs queue '%s': %v", r.jobsQueue, err)
+				r.config.Logger.Warnf("failed to watch pending jobs queue '%s': %v", r.pendingJobsQueue, err)
 				continue
 			}
 			if jobID != "" {
 				r.processJob(jobID)
+			}
+		}
+	}
+}
+
+// watchCompletedJobsQueue initiate post-processing tasks of completed jobs.
+func (r *RedisJobManager) watchCompletedJobsQueue() {
+	r.config.Logger.Infof("watch completed jobs queue '%s'", r.completedJobsQueue)
+	for {
+		select {
+		case <-r.ctx.Done():
+			return
+		default:
+			jobIDs, err := r.client.BRPop(r.ctx, time.Second, r.processingJobsQueue).Result()
+			if errors.Is(err, redis.Nil) {
+				continue
+			}
+			if err != nil {
+				r.config.Logger.Warnf("failed to watch completed jobs queue '%s': %v", r.pendingJobsQueue, err)
+				continue
+			}
+			for _, jobID := range jobIDs {
+				if job, ok := r.jobFactory().(JobHooks); ok {
+					err = r.GetJob(jobID, job)
+					if err != nil {
+						r.config.Logger.Warnf("failed to initiate post-processing tasks for job '%s': %v", jobID, err)
+						continue
+					}
+					job.OnCompletion()
+				}
 			}
 		}
 	}
@@ -314,35 +422,31 @@ func (r *RedisJobManager) processJob(jobID string) {
 	r.config.Logger.Infof("processing job '%s'", jobID)
 
 	defer func() {
-		select {
-		case <-r.ctx.Done():
-			return
-		default:
-			_ = r.publishJob(jobID)
-			_, err := r.client.LRem(r.ctx, r.workerQueue, 1, jobID).Result()
-			if err != nil {
-				r.config.Logger.Warnf("failed to remove job '%s' from worker queue '%s': %v", jobID, r.workerQueue, err)
-			}
+		r.sendJobCompletionMessage(jobID)
+		_, err := r.client.LRem(r.ctx, r.processingJobsQueue, 1, jobID).Result()
+		if err != nil {
+			r.config.Logger.Warnf("failed to remove job '%s' from processing jobs queue '%s': %v", jobID, r.processingJobsQueue, err)
 		}
 	}()
 
+	r.SetJobProgress(jobID, StateRunning, 0)
 	err := r.GetJob(jobID, job)
 	if err != nil {
+		r.SetJobProgress(jobID, StateFailed, 0)
 		return
 	}
 
 	err = job.Start()
 	if err != nil {
 		r.config.Logger.Warnf("failed to start job '%s': %v", jobID, err)
+		r.SetJobProgress(jobID, StateFailed, 0)
 		return
 	}
-	select {
-	case <-r.ctx.Done():
+
+	if err = r.SetJob(jobID, job); err != nil {
+		r.SetJobProgress(jobID, StateFailed, 0)
 		return
-	default:
-		if err = r.SetJob(jobID, job); err != nil {
-			return
-		}
-		r.config.Logger.Infof("finished job '%s'", jobID)
 	}
+	r.config.Logger.Infof("completed job '%s'", jobID)
+	r.SetJobProgress(jobID, StateCompleted, 0)
 }
