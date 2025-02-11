@@ -4,6 +4,25 @@ import (
 	"context"
 )
 
+const (
+	// StatePending indicates that a job is waiting for an available worker to be started.
+	// It's the default state of newly created jobs.
+	StatePending = "pending"
+
+	// StateRunning signifies that a job is actively being processed. This state can be assigned
+	// by a worker when it begins working on a job, or it may be set if GetJobProcess receives
+	// a message without an explicitly defined state.
+	StateRunning = "running"
+
+	// StateCompleted signifies that a job has been successfully completed. A worker assigns
+	// this state upon finishing the job without errors.
+	StateCompleted = "completed"
+
+	// StateFailed signifies that a job has been successfully completed. This state can be assigned
+	// by A worker upon finishing the job with errors.
+	StateFailed = "failed"
+)
+
 // IJobManager is an interface that defines methods for managing jobs.
 // It provides functionality to add jobs, add jobs and wait for their completion, and retrieve jobs by their unique identifier.
 type IJobManager interface {
@@ -32,24 +51,28 @@ type IJobManager interface {
 
 	// GetJob retrieves a job from the manager using its unique identifier.
 	GetJob(jobID string, job Job) (err error)
+
+	// GetJobProgress retrieves the current state and progress of a job.
+	// Depending on the implementation, this method may also return an optional artifact,
+	// such as a message ID that can be utilized in a subsequent request.
+	GetJobProgress(jobID string, lastArtefact any) (state string, progress uint64, artefact any)
+
+	// SetJobProgress updates the state and progress of a job within the manager.
+	SetJobProgress(jobID, state string, progress uint64)
 }
 
 // Job represents a task or work item that provides additional
 // functionality related to job management and status tracking.
 type Job interface {
-	// IsPending returns a boolean indicating whether the job is in a pending state,
-	// waiting to be started.
-	IsPending() bool
-
-	// IsActive returns a boolean indicating whether the job is currently active.
-	IsActive() bool
-
-	// IsDone returns a boolean indicating whether the job has been completed or not.
-	IsDone() bool
-
-	// Progress returns a percentage (0 to 100) representing the current progress of the job.
-	Progress() int
-
-	// Start begins the job processing.
+	// Start initiates the execution of the job.
 	Start() error
+}
+
+// JobHooks extends the Job interface with optional hooks, processed by the job manager after completion.
+type JobHooks interface {
+	Job
+	// OnCompletion is a hook called by the JobManager when the job is completed.
+	// This method can be used for any post-processing tasks, such as cleanup, logging,
+	// notifying other systems, or persisting job results into a database.
+	OnCompletion()
 }
