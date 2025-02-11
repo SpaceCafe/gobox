@@ -1,4 +1,4 @@
-go 1.22.9
+go 1.22.11
 
 use (
 	gin-authentication
@@ -10,7 +10,7 @@ use (
 	gin-rest
 	gin-saml
 	httpserver
+	job-manager
 	logger
 	terminator
-	job-manager
 )
