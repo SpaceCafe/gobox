@@ -310,10 +310,16 @@ func (r *RedisJobManager) addJob(jobID string, job Job) (err error) {
 		return
 	}
 
-	_, err = r.client.Expire(r.ctx, r.config.RedisNamespace+":"+jobID, r.config.RedisTTL).Result()
-	if err != nil {
-		r.config.Logger.Warnf("failed to add ttl to job '%s': %v", jobID, err)
-		return
+	r.SetJobProgress(StatePending, jobID, 0)
+
+	for _, key := range []string{
+		r.config.RedisNamespace + ":" + jobID,
+		r.config.RedisNamespace + ":" + jobID + ":" + RedisStreamJobProgress,
+	} {
+		_, err = r.client.Expire(r.ctx, key, r.config.RedisTTL).Result()
+		if err != nil {
+			r.config.Logger.Warnf("failed to add ttl to key '%s': %v", jobID, err)
+		}
 	}
 
 	_, err = r.client.LPush(r.ctx, r.pendingJobsQueue, jobID).Result()
