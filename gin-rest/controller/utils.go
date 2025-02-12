@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"mime"
 	"sort"
@@ -8,10 +10,12 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/mattn/go-sqlite3"
-	authorization "github.com/spacecafe/gobox/gin-authorization"
-	jwt "github.com/spacecafe/gobox/gin-jwt"
-	problems "github.com/spacecafe/gobox/gin-problems"
+	"github.com/spacecafe/gobox/gin-authorization"
+	"github.com/spacecafe/gobox/gin-jwt"
+	"github.com/spacecafe/gobox/gin-problems"
 	"github.com/spacecafe/gobox/gin-rest/types"
 	"gorm.io/gorm"
 )
@@ -112,9 +116,36 @@ func HandleError(ctx *gin.Context, errs ...error) {
 	ctx.Abort()
 }
 
+// HandleControllerError handles common controller errors and maps them to appropriate HTTP responses.
+// It checks the error type and calls HandleError with the corresponding problem.
+func HandleControllerError(ctx *gin.Context, err error) bool {
+	var jsonUnmarshalTypeError *json.UnmarshalTypeError
+	var validationErrors validator.ValidationErrors
+
+	switch {
+	case err == nil:
+		return false
+	case errors.As(err, &jsonUnmarshalTypeError):
+		HandleError(ctx, err, problems.ProblemBadRequest.WithDetail(jsonUnmarshalTypeError.Field))
+	case errors.As(err, &validationErrors):
+		buff := bytes.NewBufferString("")
+		for i, _ := range validationErrors {
+			buff.WriteString(validationErrors[i].Field())
+			buff.WriteString(" ")
+		}
+		HandleError(ctx, err, problems.ProblemInvalidArgument.WithDetail(strings.TrimSpace(buff.String())))
+	default:
+		HandleError(ctx, err, problems.ProblemBadRequest)
+	}
+	return true
+}
+
 // HandleServiceError handles common service errors and maps them to appropriate HTTP responses.
 // It checks the error type and calls HandleError with the corresponding problem.
 func HandleServiceError(ctx *gin.Context, err error) bool {
+	var pgError *pgconn.PgError
+	var sqliteError sqlite3.Error
+
 	switch {
 	case err == nil:
 		return false
@@ -128,12 +159,23 @@ func HandleServiceError(ctx *gin.Context, err error) bool {
 		HandleError(ctx, err, problems.ProblemMissingRequiredParameter)
 
 	// Sqlite 3
-	case errors.As(err, &sqlite3.Error{}):
-		switch err.(sqlite3.Error).ExtendedCode {
+	case errors.As(err, &sqliteError):
+		switch sqliteError.ExtendedCode {
 		case types.SqliteConstraintNotNull:
 			HandleError(ctx, err, problems.ProblemMissingRequiredParameter)
 		case types.SqliteConstraintPrimaryKey:
 			HandleError(ctx, err, problems.ProblemResourceAlreadyExists)
+		default:
+			HandleError(ctx, err, problems.ProblemInternalError)
+		}
+
+	// PostgreSQL
+	case errors.As(err, &pgError):
+		switch pgError.Code {
+		case "23502":
+			HandleError(ctx, err, problems.ProblemMissingRequiredParameter.WithDetail(pgError.ColumnName))
+		case "23505":
+			HandleError(ctx, err, problems.ProblemResourceAlreadyExists.WithDetail(pgError.ColumnName))
 		default:
 			HandleError(ctx, err, problems.ProblemInternalError)
 		}

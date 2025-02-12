@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	problems "github.com/spacecafe/gobox/gin-problems"
 	"github.com/spacecafe/gobox/gin-rest/types"
 )
 
@@ -18,8 +17,7 @@ func (r *UpdateFn[T]) Update(resource types.Resource[T], partially bool) gin.Han
 	return func(ctx *gin.Context) {
 		var entity T
 		id := ctx.Param(types.PathParam)
-		if err := ctx.ShouldBindJSON(&entity); err != nil {
-			HandleError(ctx, err, problems.ProblemBadRequest)
+		if HandleControllerError(ctx, ctx.ShouldBindJSON(&entity)) {
 			return
 		}
 
