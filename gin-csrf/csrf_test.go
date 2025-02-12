@@ -162,10 +162,10 @@ func TestNew(t *testing.T) {
 			r.POST("/test", func(_ *gin.Context) {})
 
 			request := httptest.NewRequest(tt.fields.method, "/test", http.NoBody)
-			if tt.fields.cookieValue == "" {
+			if tt.fields.cookieValue != "" {
 				request.AddCookie(&http.Cookie{Name: tt.fields.cookieName, Value: tt.fields.cookieValue})
 			}
-			if tt.fields.headerValue == "" {
+			if tt.fields.headerValue != "" {
 				request.Header.Add(tt.fields.headerName, tt.fields.headerValue)
 			}
 			recorder := httptest.NewRecorder()
