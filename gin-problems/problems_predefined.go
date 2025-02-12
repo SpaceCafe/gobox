@@ -35,6 +35,12 @@ var (
 		http.StatusBadRequest,
 		"The received content is not valid for this resource.",
 	)
+	ProblemInvalidArgument = NewProblem(
+		"",
+		http.StatusText(http.StatusBadRequest),
+		http.StatusBadRequest,
+		"One or more arguments provided in the request is not valid for this resource.",
+	)
 	ProblemNoSuchAccessPoint = NewProblem(
 		"",
 		"No such access point",
