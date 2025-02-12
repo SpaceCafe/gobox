@@ -12,7 +12,7 @@ type IProblem interface {
 	Error() (msg string)
 	WithError(err error) (newProblem *Problem)
 	Abort(ctx *gin.Context)
-	setError(err error)
+	appendDetail(err error)
 }
 
 // Problem is used for a standardised error handling for the REST API that the IETF
@@ -87,7 +87,7 @@ func NewProblem(problemType string, title string, status int, detail string) *Pr
 // NewProblemWithError creates a new instance of Problem and set its error field using an existing error.
 func NewProblemWithError(problemType string, title string, status int, detail string, err error) *Problem {
 	p := NewProblem(problemType, title, status, detail)
-	p.setError(err)
+	p.appendDetail(err.Error())
 	return p
 }
 
@@ -96,10 +96,17 @@ func (r *Problem) Error() (msg string) {
 	return r.Title + ": " + r.Detail
 }
 
-// WithError creates a copy of the Problem instance and sets its error field.
+// WithError creates a copy of the Problem instance and adds the error message to details.
 func (r *Problem) WithError(err error) (newProblem *Problem) {
 	p := *r
-	p.setError(err)
+	p.appendDetail(err.Error())
+	return &p
+}
+
+// WithDetail creates a copy of the Problem instance and adds text to details.
+func (r *Problem) WithDetail(text string) (newProblem *Problem) {
+	p := *r
+	p.appendDetail(text)
 	return &p
 }
 
@@ -109,9 +116,9 @@ func (r *Problem) Abort(ctx *gin.Context) {
 	ctx.Abort()
 }
 
-// setError appends the human-readable error message to the detail field of the problem.
-func (r *Problem) setError(err error) {
-	if err != nil {
-		r.Detail = r.Detail + "\n\nReason: " + err.Error()
+// appendDetail adds a text or the human-readable error message to the detail field of the problem.
+func (r *Problem) appendDetail(text string) {
+	if text != "" {
+		r.Detail = r.Detail + "\n\nReason: " + text
 	}
 }
