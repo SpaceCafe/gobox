@@ -175,7 +175,11 @@ func HandleServiceError(ctx *gin.Context, err error) bool {
 		case "23502":
 			HandleError(ctx, err, problems.ProblemMissingRequiredParameter.WithDetail(pgError.ColumnName))
 		case "23505":
-			HandleError(ctx, err, problems.ProblemResourceAlreadyExists.WithDetail(pgError.ColumnName))
+			detail := pgError.ColumnName
+			if detail == "" {
+				detail = pgError.Detail
+			}
+			HandleError(ctx, err, problems.ProblemResourceAlreadyExists.WithDetail(detail))
 		default:
 			HandleError(ctx, err, problems.ProblemInternalError)
 		}
