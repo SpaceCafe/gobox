@@ -14,8 +14,7 @@ type REST struct {
 	schemaCache *sync.Map
 }
 
-func New(router *gin.RouterGroup, jwtConfig *jwt.Config, authorizationConfig *authorization.Config) *REST {
-
+func New(router *gin.RouterGroup) (rest *REST) {
 	// Check if router is nil.
 	if router == nil {
 		panic("router is nil")
@@ -26,12 +25,14 @@ func New(router *gin.RouterGroup, jwtConfig *jwt.Config, authorizationConfig *au
 		panic(err)
 	}
 
-	// Add JWT and authorization middlewares.
-	router.Use(jwt.New(jwtConfig, router))
-	router.Use(authorization.New(authorizationConfig, router))
+	return &REST{router: router, schemaCache: new(sync.Map)}
+}
 
-	return &REST{
-		router:      router,
-		schemaCache: new(sync.Map),
-	}
+func NewWithAuth(router *gin.RouterGroup, jwtConfig *jwt.Config, authorizationConfig *authorization.Config) (rest *REST) {
+	rest = New(router)
+
+	// Add JWT and authorization middlewares.
+	rest.router.Use(jwt.New(jwtConfig, router))
+	rest.router.Use(authorization.New(authorizationConfig, router))
+	return
 }

@@ -40,7 +40,7 @@ type Resource[T any] interface {
 	// GetViews returns a map of views associated with the resource.
 	GetViews() map[string]any
 
-	// GetGroup returns the used gin.RouterGround of the resource.
+	// GetGroup returns the used gin.RouterGroup of the resource.
 	GetGroup() *gin.RouterGroup
 
 	// HasField checks if the resource has a specific field.
