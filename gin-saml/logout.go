@@ -6,8 +6,8 @@ import (
 	"encoding/xml"
 	"errors"
 
-	"github.com/crewjam/saml"
 	"github.com/gin-gonic/gin"
+	"github.com/spacecafe/gosaml"
 )
 
 // RequestType represents different types of SAML logout requests and responses.

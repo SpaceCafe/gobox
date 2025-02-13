@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/crewjam/saml"
-	"github.com/crewjam/saml/samlsp"
 	"github.com/gin-gonic/gin"
+	"github.com/spacecafe/gosaml"
+	"github.com/spacecafe/gosaml/samlsp"
 )
 
 const (

@@ -3,8 +3,8 @@ package saml
 import (
 	"errors"
 
-	"github.com/crewjam/saml/samlsp"
 	"github.com/gin-gonic/gin"
+	"github.com/spacecafe/gosaml/samlsp"
 )
 
 var (

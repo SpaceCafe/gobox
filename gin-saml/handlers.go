@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	problems "github.com/spacecafe/gobox/gin-problems"
+	"github.com/spacecafe/gobox/gin-problems"
 )
 
 // getMetadata retrieves SAML metadata using middleware's ServeMetadata method.

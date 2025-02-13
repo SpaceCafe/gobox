@@ -8,8 +8,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/crewjam/saml"
 	"github.com/spacecafe/gobox/logger"
+	"github.com/spacecafe/gosaml"
 )
 
 var (
