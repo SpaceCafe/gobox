@@ -84,7 +84,7 @@ func TestNewRequestParams(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewRequestParams(tt.args.ctx, tt.args.hasFieldFn); !reflect.DeepEqual(got, tt.want) {
+			if got := NewRequestParams(tt.args.ctx, &types.ServiceOptions{}, tt.args.hasFieldFn); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewRequestParams() = %+v, want %+v", got, tt.want)
 			}
 		})
