@@ -8,7 +8,6 @@ linters-settings:
           - "!$test"
         allow:
           - $gostd
-          - github.com/crewjam/saml
           - github.com/fatih/color
           - github.com/gertd/go-pluralize
           - github.com/gin-gonic/gin
@@ -22,9 +21,9 @@ linters-settings:
           - "$test"
         allow:
           - $gostd
-          - github.com/crewjam/saml
           - github.com/DATA-DOG/go-sqlmock
           - github.com/gin-gonic/gin
+          - github.com/golang-jwt/jwt/v5
           - github.com/spacecafe
           - github.com/stretchr/testify
   gocritic:
