@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"path"
+	"regexp"
 	"time"
 
 	jwt_ "github.com/golang-jwt/jwt/v5"
@@ -13,6 +14,7 @@ import (
 const (
 	DefaultTokenExpiration = time.Hour * 24 // 1 day
 	DefaultIssuer          = "API server"
+	DefaultCookieName      = "jwt_token"
 )
 
 var (
@@ -25,10 +27,14 @@ var (
 	ErrNoSecretKey            = errors.New("secret key must not be empty")
 	ErrInvalidAudiences       = errors.New("audiences must not be nil")
 	ErrNoAudience             = errors.New("audience cannot be empty")
+	ErrNoCookieName           = errors.New("cookie name cannot be empty")
+	ErrInvalidCookieName      = errors.New("cookie name must not be empty or contain invalid characters")
 	ErrNoIssuer               = errors.New("issuer cannot be empty")
 	ErrNoSigner               = errors.New("signer must not be nil")
 	ErrInvalidTokenExpiration = errors.New("token expiration must be greater than zero")
 	ErrNoLogger               = errors.New("logger cannot be empty")
+
+	validCookieName = regexp.MustCompile(`^[!#$%&'*\+\-.^_` + "`" + `|~0-9a-zA-Z]+$`)
 )
 
 // Config holds configuration related to JWT.
@@ -48,6 +54,9 @@ type Config struct {
 	// Issuer is the entity that issues the token.
 	Issuer string `json:"issuer" yaml:"issuer" mapstructure:"issuer"`
 
+	// CookieName specifies the name of the cookie that holds the JWT.
+	CookieName string `json:"cookie_name" yaml:"cookie_name" mapstructure:"cookie_name"`
+
 	// Signer is a function that returns a new SigningMethod to be used for signing JWT.
 	Signer jwt_.SigningMethod
 
@@ -64,6 +73,7 @@ func NewConfig(log *logger.Logger) *Config {
 		ExcludedRoutes:  DefaultExcludedRoutes,
 		Audiences:       DefaultAudience,
 		Issuer:          DefaultIssuer,
+		CookieName:      DefaultCookieName,
 		Signer:          DefaultSigner,
 		TokenExpiration: DefaultTokenExpiration,
 	}
@@ -98,12 +108,18 @@ func (r *Config) Validate() error {
 		return ErrInvalidAudiences
 	}
 	for i := range r.Audiences {
-		if len(r.Audiences[i]) == 0 {
+		if r.Audiences[i] == "" {
 			return ErrNoAudience
 		}
 	}
 	if r.Issuer == "" {
 		return ErrNoIssuer
+	}
+	if r.CookieName == "" {
+		return ErrNoCookieName
+	}
+	if validCookieName.MatchString(r.CookieName) {
+		return ErrInvalidCookieName
 	}
 	if r.Signer == nil {
 		return ErrNoSigner
@@ -123,7 +139,7 @@ func (r *Config) setSecretKey(key string) (err error) {
 }
 
 func (r *Config) getSecretKey() []byte {
-	if r.secretKey == nil || len(r.secretKey) == 0 {
+	if len(r.secretKey) == 0 {
 		panic(ErrNoSecretKey)
 	}
 	return r.secretKey

@@ -25,8 +25,8 @@ func New(config *Config, routerGroup *gin.RouterGroup) gin.HandlerFunc {
 			return
 		}
 
-		// Load JWT token from header
-		token, err := NewTokenFromHeader(config, ctx)
+		// Load JWT token from request
+		token, err := NewTokenFromRequest(config, ctx)
 		if err != nil {
 			ctx.Header("WWW-Authenticate", "Bearer realm=\"JWT\", charset=\"UTF-8\"")
 			if errors.Is(err, request.ErrNoTokenInRequest) {
