@@ -26,7 +26,7 @@ func New(config *Config, routerGroup *gin.RouterGroup) gin.HandlerFunc {
 		}
 
 		authorizations := NewAuthorizations(config, ctx)
-		SetAuthorizations(&authorizations, ctx)
+		SetAuthorizations(authorizations, ctx)
 		ctx.Next()
 	}
 }

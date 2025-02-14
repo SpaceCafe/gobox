@@ -10,19 +10,19 @@ const (
 )
 
 // SetAuthorizations stores the provided Authorizations object in the context.
-func SetAuthorizations(authorizations *Authorizations, ctx *gin.Context) {
+func SetAuthorizations(authorizations Authorizations, ctx *gin.Context) {
 	ctx.Set(ContextKeyName, authorizations)
 }
 
 // GetAuthorizations retrieves the Authorizations object from the context. If no object is found,
 // it returns a new empty Authorizations object instance.
-func GetAuthorizations(ctx *gin.Context) (authorizations *Authorizations) {
+func GetAuthorizations(ctx *gin.Context) (authorizations Authorizations) {
 	if authorizationsRaw, ok := ctx.Get(ContextKeyName); ok {
-		if authorizations, ok = authorizationsRaw.(*Authorizations); ok {
+		if authorizations, ok = authorizationsRaw.(Authorizations); ok {
 			return
 		}
 	}
-	return &Authorizations{}
+	return Authorizations{}
 }
 
 // IsAuthorized checks if a given action on a resource is authorized for the current context.
