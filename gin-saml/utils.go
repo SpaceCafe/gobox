@@ -11,6 +11,14 @@ var (
 	ErrNoSessionAttributes = errors.New("no session attributes found")
 )
 
+type ErrNoAttribute struct {
+	Name string
+}
+
+func (e ErrNoAttribute) Error() string {
+	return "no attribute '" + e.Name + "' found"
+}
+
 // Attributes is a type that embeds samlsp.Attributes and includes a configuration pointer.
 type Attributes struct {
 	samlsp.Attributes
@@ -31,22 +39,40 @@ func (r *SAML) GetAttributes(ctx *gin.Context) (attributes *Attributes, err erro
 }
 
 // Get returns the first mapped attribute named `name` or
-// an empty string if no such attributes is present.
-func (r *Attributes) Get(name string) string {
-	if key, ok := r.config.Mapping[name]; ok {
-		return r.Attributes.Get(key)
-	}
-	return r.Attributes.Get(name)
+// an empty string if no such attribute is present.
+func (r *Attributes) Get(name string) (value string) {
+	value, _ = r.MustGet(name)
+	return
 }
 
 // GetAll returns all mapped attributes named `name` or
 // an empty []string if no such attributes is present.
-func (r *Attributes) GetAll(name string) []string {
+func (r *Attributes) GetAll(name string) (values []string) {
+	values, _ = r.MustGetAll(name)
+	return
+}
+
+// MustGet returns the first mapped attribute named `name` or
+// an error if no such attribute is present.
+func (r *Attributes) MustGet(name string) (value string, err error) {
+	if key, ok := r.config.Mapping[name]; ok {
+		name = key
+	}
+	value = r.Attributes.Get(name)
+	if value == "" {
+		err = ErrNoAttribute{Name: name}
+	}
+	return
+}
+
+// MustGetAll returns all mapped attributes named `name` or
+// an error if no such attribute is present.
+func (r *Attributes) MustGetAll(name string) (values []string, err error) {
 	if key, ok := r.config.Mapping[name]; ok {
 		name = key
 	}
 	if r.Attributes == nil || len(r.Attributes[name]) == 0 {
-		return []string{}
+		return []string{}, ErrNoAttribute{Name: name}
 	}
-	return r.Attributes[name]
+	return r.Attributes[name], nil
 }
