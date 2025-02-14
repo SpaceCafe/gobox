@@ -5,13 +5,24 @@ import (
 	problems "github.com/spacecafe/gobox/gin-problems"
 )
 
-// GetAuthorizations retrieves the Authorizations object from the context.
-// It returns an empty Authorizations object if not found.
-func GetAuthorizations(ctx *gin.Context) Authorizations {
-	if authorizations, ok := ctx.Get("authorization/authorizations"); ok {
-		return authorizations.(Authorizations)
+const (
+	ContextKeyName = "authorization.authorizations"
+)
+
+// SetAuthorizations stores the provided Authorizations object in the context.
+func SetAuthorizations(authorizations *Authorizations, ctx *gin.Context) {
+	ctx.Set(ContextKeyName, authorizations)
+}
+
+// GetAuthorizations retrieves the Authorizations object from the context. If no object is found,
+// it returns a new empty Authorizations object instance.
+func GetAuthorizations(ctx *gin.Context) (authorizations *Authorizations) {
+	if authorizationsRaw, ok := ctx.Get(ContextKeyName); ok {
+		if authorizations, ok = authorizationsRaw.(*Authorizations); ok {
+			return
+		}
 	}
-	return Authorizations{}
+	return &Authorizations{}
 }
 
 // IsAuthorized checks if a given action on a resource is authorized for the current context.
@@ -27,7 +38,6 @@ func RequireAuthorization(resource string, action Action) gin.HandlerFunc {
 			ctx.Next()
 			return
 		}
-		_ = ctx.Error(problems.ProblemInsufficientPermission)
-		ctx.Abort()
+		problems.ProblemInsufficientPermission.Abort(ctx)
 	}
 }

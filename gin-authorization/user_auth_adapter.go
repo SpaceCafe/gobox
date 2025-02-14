@@ -2,7 +2,7 @@ package authorization
 
 import (
 	"github.com/gin-gonic/gin"
-	jwt "github.com/spacecafe/gobox/gin-jwt"
+	"github.com/spacecafe/gobox/gin-jwt"
 )
 
 type UserAuthAdapterFunc func(*gin.Context) UserAuthAdapter
@@ -33,11 +33,9 @@ type JWTUserAuthAdapter struct {
 }
 
 func NewJWTUserAuthAdapter(ctx *gin.Context) UserAuthAdapter {
-	result := &JWTUserAuthAdapter{}
-	if token, ok := ctx.Get("jwt/token"); ok {
-		result.claims = token.(*jwt.Token).Claims.(jwt.AuthorizationClaims)
+	return &JWTUserAuthAdapter{
+		claims: jwt.GetClaims(ctx),
 	}
-	return result
 }
 
 func (r *JWTUserAuthAdapter) Roles() []string {
