@@ -24,16 +24,16 @@ const (
 )
 
 var (
-	ErrInvalidExcludedRoutes = errors.New("excluded routes must not be nil")
-	ErrInvalidExcludedRoute  = errors.New("excluded route must be absolute and not end with a slash")
-	ErrNoSecretKey           = errors.New("secret key must not be empty")
-	ErrInvalidCookieName     = errors.New("cookie name must not be empty or contain invalid characters")
-	ErrInvalidHeaderName     = errors.New("header name must not be empty or contain invalid characters")
-	ErrInvalidSameSite       = errors.New("same site is not valid")
-	ErrInvalidPath           = errors.New("path must be absolute and not end with a slash")
-	ErrInvalidTokenLength    = errors.New("token length must be greater than 0")
-	ErrNoSigner              = errors.New("signer must not be nil")
-	ErrNoLogger              = errors.New("logger cannot be empty")
+	ErrInvalidExcludedRoutes = errors.New("csrf.excluded_routes must not be nil")
+	ErrInvalidExcludedRoute  = errors.New("csrf.excluded_route must be absolute and not end with a slash")
+	ErrNoSecretKey           = errors.New("csrf.secret_key must not be empty")
+	ErrInvalidCookieName     = errors.New("csrf.cookie_name must not be empty or contain invalid characters")
+	ErrInvalidHeaderName     = errors.New("csrf.header_name must not be empty or contain invalid characters")
+	ErrInvalidSameSite       = errors.New("csrf.same_site is not valid")
+	ErrInvalidPath           = errors.New("csrf.path must be absolute and not end with a slash")
+	ErrInvalidTokenLength    = errors.New("csrf.token_length must be greater than 0")
+	ErrNoSigner              = errors.New("csrf.signer must not be nil")
+	ErrNoLogger              = errors.New("csrf.logger cannot be empty")
 
 	//nolint:gochecknoglobals // Maintain a set of predefined http.SameSite that are used throughout the application.
 	SameSites = map[string]http.SameSite{
@@ -127,10 +127,10 @@ func (r *Config) Validate() error {
 	if len(r.SecretKey) == 0 {
 		return ErrNoSecretKey
 	}
-	if validCookieName.MatchString(r.CookieName) {
+	if !validCookieName.MatchString(r.CookieName) {
 		return ErrInvalidCookieName
 	}
-	if validHeaderName.MatchString(r.HeaderName) {
+	if !validHeaderName.MatchString(r.HeaderName) {
 		return ErrInvalidHeaderName
 	}
 	if err := r.SetSameSite(""); err != nil {

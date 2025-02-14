@@ -25,17 +25,17 @@ var (
 	//nolint:gochecknoglobals // Used as default value and cannot be declared as constant due to its type.
 	DefaultSigner = jwt_.SigningMethodHS256
 
-	ErrInvalidExcludedRoutes  = errors.New("excluded routes must not be nil")
-	ErrInvalidExcludedRoute   = errors.New("excluded route must be absolute and not end with a slash")
-	ErrNoSecretKey            = errors.New("secret key must not be empty")
-	ErrInvalidAudiences       = errors.New("audiences must not be nil")
-	ErrNoAudience             = errors.New("audience cannot be empty")
-	ErrNoCookieName           = errors.New("cookie name cannot be empty")
-	ErrInvalidCookieName      = errors.New("cookie name must not be empty or contain invalid characters")
-	ErrNoIssuer               = errors.New("issuer cannot be empty")
-	ErrNoSigner               = errors.New("signer must not be nil")
-	ErrInvalidTokenExpiration = errors.New("token expiration must be greater than zero")
-	ErrNoLogger               = errors.New("logger cannot be empty")
+	ErrInvalidExcludedRoutes  = errors.New("jwt.excluded_routes must not be nil")
+	ErrInvalidExcludedRoute   = errors.New("jwt.excluded_route must be absolute and not end with a slash")
+	ErrNoSecretKey            = errors.New("jwt.secret_key must not be empty")
+	ErrInvalidAudiences       = errors.New("jwt.audiences must not be nil")
+	ErrNoAudience             = errors.New("jwt.audience cannot be empty")
+	ErrNoCookieName           = errors.New("jwt.cookie_name cannot be empty")
+	ErrInvalidCookieName      = errors.New("jwt.cookie_name must not be empty or contain invalid characters")
+	ErrNoIssuer               = errors.New("jwt.issuer cannot be empty")
+	ErrNoSigner               = errors.New("jwt.signer must not be nil")
+	ErrInvalidTokenExpiration = errors.New("jwt.token_expiration must be greater than zero")
+	ErrNoLogger               = errors.New("jwt.logger cannot be empty")
 
 	validCookieName = regexp.MustCompile(`^[!#$%&'*\+\-.^_` + "`" + `|~0-9a-zA-Z]+$`)
 )
@@ -120,7 +120,7 @@ func (r *Config) Validate() error {
 	if r.CookieName == "" {
 		return ErrNoCookieName
 	}
-	if validCookieName.MatchString(r.CookieName) {
+	if !validCookieName.MatchString(r.CookieName) {
 		return ErrInvalidCookieName
 	}
 	if r.Signer == nil {
