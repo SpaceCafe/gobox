@@ -6,9 +6,13 @@ import (
 )
 
 var (
-	DefaultExcludedRoutes  = make([]string, 0)
-	DefaultRoles           = make(map[string][]Entitlement)
-	DefaultGroups          = make(map[string][]Entitlement)
+	//nolint:gochecknoglobals // Used as default value and cannot be declared as constant due to its type.
+	DefaultExcludedRoutes = make([]string, 0)
+	//nolint:gochecknoglobals // Used as default value and cannot be declared as constant due to its type.
+	DefaultRoles = make(map[string][]Entitlement)
+	//nolint:gochecknoglobals // Used as default value and cannot be declared as constant due to its type.
+	DefaultGroups = make(map[string][]Entitlement)
+	//nolint:gochecknoglobals // Used as default value and cannot be declared as constant due to its type.
 	DefaultUserAuthAdapter = NewJWTUserAuthAdapter
 
 	ErrInvalidExcludedRoutes = errors.New("excluded routes must not be nil")
@@ -22,7 +26,6 @@ var (
 
 // Config holds configuration related to user and API key authentication.
 type Config struct {
-
 	// ExcludedRoutes is a list of routes that are excluded from authorization checks.
 	ExcludedRoutes []string `json:"excluded_routes" yaml:"excluded_routes" mapstructure:"excluded_routes"`
 
