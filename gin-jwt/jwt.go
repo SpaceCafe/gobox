@@ -12,13 +12,12 @@ import (
 func New(config *Config, routerGroup *gin.RouterGroup) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		fullPath := ctx.FullPath()
-		if len(fullPath) == 0 {
+		if fullPath == "" {
 			return
 		}
 		if routerGroup != nil {
 			fullPath = fullPath[len(routerGroup.BasePath()):]
 		}
-		ctx.Set("jwt/config", config)
 
 		// Skip JWT on excluded paths
 		if slices.Contains(config.ExcludedRoutes, fullPath) {
@@ -31,16 +30,15 @@ func New(config *Config, routerGroup *gin.RouterGroup) gin.HandlerFunc {
 		if err != nil {
 			ctx.Header("WWW-Authenticate", "Bearer realm=\"JWT\", charset=\"UTF-8\"")
 			if errors.Is(err, request.ErrNoTokenInRequest) {
-				_ = ctx.Error(problems.ProblemJWTMissing)
+				problems.ProblemJWTMissing.Abort(ctx)
 			} else {
-				config.Logger.Info(err)
-				_ = ctx.Error(problems.ProblemJWTInvalid)
+				_ = ctx.Error(err)
+				problems.ProblemJWTInvalid.Abort(ctx)
 			}
-			ctx.Abort()
 			return
 		}
 
-		ctx.Set("jwt/token", token)
+		SetToken(token, ctx)
 		ctx.Next()
 	}
 }
