@@ -9,6 +9,10 @@ import (
 	problems "github.com/spacecafe/gobox/gin-problems"
 )
 
+// New creates a JWT middleware handler function for the given configuration and router group.
+// It checks if the request path is excluded from JWT validation. If not, it attempts to load
+// a JWT token from the request. If successful, the token is stored in the context; otherwise,
+// appropriate error responses are sent.
 func New(config *Config, routerGroup *gin.RouterGroup) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		fullPath := ctx.FullPath()

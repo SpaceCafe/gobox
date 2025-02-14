@@ -65,7 +65,7 @@ type Claims struct {
 	// https://www.rfc-editor.org/rfc/rfc9396.html#section-9.1
 	AuthorizationDetails []AuthorizationDetail `json:"authorization_details"`
 
-	// PrefferedUsername is the shorthand name by which the End-User wishes to be referred to.
+	// PreferredUsername is the shorthand name by which the End-User wishes to be referred to.
 	// OpenID Connect Core 1.0, Section 5.1
 	// https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
 	PreferredUsername string `json:"preferred_username"`

@@ -18,9 +18,12 @@ const (
 )
 
 var (
+	//nolint:gochecknoglobals // Used as default value and cannot be declared as constant due to its type.
 	DefaultExcludedRoutes = make([]string, 0)
-	DefaultAudience       = []string{"api"}
-	DefaultSigner         = jwt_.SigningMethodHS256
+	//nolint:gochecknoglobals // Used as default value and cannot be declared as constant due to its type.
+	DefaultAudience = []string{"api"}
+	//nolint:gochecknoglobals // Used as default value and cannot be declared as constant due to its type.
+	DefaultSigner = jwt_.SigningMethodHS256
 
 	ErrInvalidExcludedRoutes  = errors.New("excluded routes must not be nil")
 	ErrInvalidExcludedRoute   = errors.New("excluded route must be absolute and not end with a slash")
@@ -39,7 +42,6 @@ var (
 
 // Config holds configuration related to JWT.
 type Config struct {
-
 	// ExcludedRoutes is a list of routes that are excluded from JWT.
 	ExcludedRoutes []string `json:"excluded_routes" yaml:"excluded_routes" mapstructure:"excluded_routes"`
 
@@ -133,11 +135,13 @@ func (r *Config) Validate() error {
 	return nil
 }
 
+// setSecretKey decodes the base64 encoded secret key and stores it in the Config.
 func (r *Config) setSecretKey(key string) (err error) {
 	r.secretKey, err = base64.StdEncoding.DecodeString(key)
 	return
 }
 
+// getSecretKey returns the decoded secret key. If no secret key is set, it returns an error.
 func (r *Config) getSecretKey() []byte {
 	if len(r.secretKey) == 0 {
 		panic(ErrNoSecretKey)
