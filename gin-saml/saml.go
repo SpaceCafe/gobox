@@ -154,6 +154,11 @@ func (r *SAML) onError(writer http.ResponseWriter, request *http.Request, err er
 	http.Redirect(writer, request, r.config.DefaultErrorURI, http.StatusSeeOther)
 }
 
+// ServiceProvider returns a pointer to the SAML service provider configured in the middleware.
+func (r *SAML) ServiceProvider() *saml.ServiceProvider {
+	return &r.middleware.ServiceProvider
+}
+
 // parseCookieSameSite parses the SameSite value from a string and returns the corresponding http.SameSite constant.
 func parseCookieSameSite(text string) http.SameSite {
 	switch strings.ToLower(text) {
