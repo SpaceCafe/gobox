@@ -2,10 +2,12 @@ package authorization
 
 import (
 	"strings"
+	"sync"
 )
 
 // ConfigRoleGroupMappingAdapter maps roles and groups to their authorizations using a configuration.
 type ConfigRoleGroupMappingAdapter struct {
+	sync.Mutex
 	config func() map[string][]Entitlement
 	cache  RoleGroupMap
 }
@@ -19,11 +21,14 @@ func NewConfigRoleGroupMappingAdapter(config func() map[string][]Entitlement) *C
 }
 
 // Map returns the cached role-to-authorization map or creates it if not already cached.
-func (a *ConfigRoleGroupMappingAdapter) Map() RoleGroupMap {
-	if a.cache == nil {
-		a.cache = createMap(a.config())
+func (r *ConfigRoleGroupMappingAdapter) Map() RoleGroupMap {
+	r.Lock()
+	defer r.Unlock()
+
+	if r.cache == nil {
+		r.cache = createMap(r.config())
 	}
-	return a.cache
+	return r.cache
 }
 
 // createMap is a helper function to create the RoleGroupMap from a given map of strings to slices of Entitlement.
