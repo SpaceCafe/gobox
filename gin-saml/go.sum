@@ -29,8 +29,8 @@ github.com/go-playground/locales v0.14.1 h1:EWaQ/wswjilfKLTECiXz7Rh+3BjFhfDFKv/o
 github.com/go-playground/locales v0.14.1/go.mod h1:hxrqLVvrK65+Rwrd5Fc6F2O76J/NuW9t0sjnWqG1slY=
 github.com/go-playground/universal-translator v0.18.1 h1:Bcnm0ZwsGyWbCzImXv+pAJnYK9S473LQFuzCbDbfSFY=
 github.com/go-playground/universal-translator v0.18.1/go.mod h1:xekY+UJKNuX9WP91TpwSH2VMlDf28Uj24BCp08ZFTUY=
-github.com/go-playground/validator/v10 v10.24.0 h1:KHQckvo8G6hlWnrPX4NJJ+aBfWNAE/HH+qdL2cBpCmg=
-github.com/go-playground/validator/v10 v10.24.0/go.mod h1:GGzBIJMuE98Ic/kJsBXbz1x/7cByt++cQ+YOuDM5wus=
+github.com/go-playground/validator/v10 v10.25.0 h1:5Dh7cjvzR7BRZadnsVOzPhWsrwUr0nmsZJxEAnFLNO8=
+github.com/go-playground/validator/v10 v10.25.0/go.mod h1:GGzBIJMuE98Ic/kJsBXbz1x/7cByt++cQ+YOuDM5wus=
 github.com/goccy/go-json v0.10.5 h1:Fq85nIqj+gXn/S5ahsiTlK3TmC85qgirsdTP/+DeaC4=
 github.com/goccy/go-json v0.10.5/go.mod h1:oq7eo15ShAhp70Anwd5lgX2pLfOS3QCiwU/PULtXL6M=
 github.com/golang-jwt/jwt/v4 v4.5.1 h1:JdqV9zKUdtaa9gdPlywC3aeoEsR681PlKC+4F5gQgeo=
@@ -83,10 +83,10 @@ github.com/rogpeppe/go-internal v1.13.1 h1:KvO1DLK/DRN07sQ1LQKScxyZJuNnedQ5/wKSR
 github.com/rogpeppe/go-internal v1.13.1/go.mod h1:uMEvuHeurkdAXX61udpOXGD/AzZDWNMNyH2VO9fmH0o=
 github.com/russellhaering/goxmldsig v1.4.0 h1:8UcDh/xGyQiyrW+Fq5t8f+l2DLB1+zlhYzkPUJ7Qhys=
 github.com/russellhaering/goxmldsig v1.4.0/go.mod h1:gM4MDENBQf7M+V824SGfyIUVFWydB7n0KkEubVJl+Tw=
-github.com/spacecafe/gobox/gin-problems v0.0.0-20250213095007-67053020f72d h1:mUxUK+0YpteuczaKsAp7z0DXJdpuqefbqNvyTygzAkg=
-github.com/spacecafe/gobox/gin-problems v0.0.0-20250213095007-67053020f72d/go.mod h1:H/crKOoQujRe2bNsYjUgWkhH9w0Pt2iST3YSNVwNMc8=
-github.com/spacecafe/gobox/logger v0.0.0-20250213095007-67053020f72d h1:qEfj9uJerXP9ro0OePtKWrNaAvt8Atz597ogrAaWk1U=
-github.com/spacecafe/gobox/logger v0.0.0-20250213095007-67053020f72d/go.mod h1:6RKIwzkuQHPwgoHC/sHaZZumGuOunEjoXh5wnQrzBnw=
+github.com/spacecafe/gobox/gin-problems v0.0.0-20250214123035-ae634da429dc h1:/qeLfrq9UsIq9GE0AcbQ8qphwyR/gsrJqBvLLWZKV/4=
+github.com/spacecafe/gobox/gin-problems v0.0.0-20250214123035-ae634da429dc/go.mod h1:H/crKOoQujRe2bNsYjUgWkhH9w0Pt2iST3YSNVwNMc8=
+github.com/spacecafe/gobox/logger v0.0.0-20250214123035-ae634da429dc h1:7SrhQk5r1QwlSo5G6reCsj2PkciLGgNCb5SonhsMFRY=
+github.com/spacecafe/gobox/logger v0.0.0-20250214123035-ae634da429dc/go.mod h1:6RKIwzkuQHPwgoHC/sHaZZumGuOunEjoXh5wnQrzBnw=
 github.com/spacecafe/gosaml v0.4.15 h1:81CFMsT+4VLa22t0GP1/hf/Cou3foLTqQSRqFcN55Nw=
 github.com/spacecafe/gosaml v0.4.15/go.mod h1:2zsvij/oWPHk/mvp+GVX6NtJvOvFJSD4GnCSknLeXic=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

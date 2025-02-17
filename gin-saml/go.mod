@@ -4,8 +4,8 @@ go 1.23.6
 
 require (
 	github.com/gin-gonic/gin v1.10.0
-	github.com/spacecafe/gobox/gin-problems v0.0.0-20250213095007-67053020f72d
-	github.com/spacecafe/gobox/logger v0.0.0-20250213095007-67053020f72d
+	github.com/spacecafe/gobox/gin-problems v0.0.0-20250214123035-ae634da429dc
+	github.com/spacecafe/gobox/logger v0.0.0-20250214123035-ae634da429dc
 	github.com/spacecafe/gosaml v0.4.15
 	github.com/stretchr/testify v1.10.0
 )
@@ -22,7 +22,7 @@ require (
 	github.com/gin-contrib/sse v1.0.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.24.0 // indirect
+	github.com/go-playground/validator/v10 v10.25.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/jonboulle/clockwork v0.5.0 // indirect
