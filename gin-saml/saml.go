@@ -159,6 +159,25 @@ func (r *SAML) ServiceProvider() *saml.ServiceProvider {
 	return &r.middleware.ServiceProvider
 }
 
+// CreateSession is called when we have received a valid SAML assertion and
+// should create a new session and modify the http response accordingly, e.g. by
+// setting a cookie.
+func (r *SAML) CreateSession(ctx *gin.Context, assertion *saml.Assertion) error {
+	return r.middleware.Session.CreateSession(ctx.Writer, ctx.Request, assertion)
+}
+
+// DeleteSession is called to modify the response such that it removed the current
+// session, e.g. by deleting a cookie.
+func (r *SAML) DeleteSession(ctx *gin.Context) error {
+	return r.middleware.Session.DeleteSession(ctx.Writer, ctx.Request)
+}
+
+// GetSession returns the current Session associated with the request, or
+// ErrNoSession if there is no valid session.
+func (r *SAML) GetSession(ctx *gin.Context) (samlsp.Session, error) {
+	return r.middleware.Session.GetSession(ctx.Request)
+}
+
 // parseCookieSameSite parses the SameSite value from a string and returns the corresponding http.SameSite constant.
 func parseCookieSameSite(text string) http.SameSite {
 	switch strings.ToLower(text) {
