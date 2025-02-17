@@ -29,11 +29,11 @@ type Config struct {
 	// ExcludedRoutes is a list of routes that are excluded from authorization checks.
 	ExcludedRoutes []string `json:"excluded_routes" yaml:"excluded_routes" mapstructure:"excluded_routes"`
 
-	// RoleMapper maps roles to entitlements.
-	RoleMapper RoleGroupMapper
+	// RoleMappingAdapter maps roles to entitlements.
+	RoleMappingAdapter RoleGroupMappingAdapter
 
-	// GroupMapper maps groups to entitlements.
-	GroupMapper RoleGroupMapper
+	// GroupMappingAdapter maps groups to entitlements.
+	GroupMappingAdapter RoleGroupMappingAdapter
 
 	// Roles is a map of role names to their entitlements.
 	Roles map[string][]Entitlement `json:"roles" yaml:"roles" mapstructure:"roles"`
@@ -53,8 +53,8 @@ func NewConfig() *Config {
 		Groups:          DefaultGroups,
 		UserAuthAdapter: DefaultUserAuthAdapter,
 	}
-	config.RoleMapper = &ConfigRoleMapper{Config: config}
-	config.GroupMapper = &ConfigGroupMapper{Config: config}
+	config.RoleMappingAdapter = NewConfigRoleGroupMappingAdapter(func() map[string][]Entitlement { return config.Roles })
+	config.GroupMappingAdapter = NewConfigRoleGroupMappingAdapter(func() map[string][]Entitlement { return config.Groups })
 
 	return config
 }
@@ -70,10 +70,10 @@ func (r *Config) Validate() error {
 			return ErrInvalidExcludedRoute
 		}
 	}
-	if r.RoleMapper == nil {
+	if r.RoleMappingAdapter == nil {
 		return ErrNoRoleMapper
 	}
-	if r.GroupMapper == nil {
+	if r.GroupMappingAdapter == nil {
 		return ErrNoGroupMapper
 	}
 	if r.Roles == nil {

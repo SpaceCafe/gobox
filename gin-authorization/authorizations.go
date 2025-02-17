@@ -1,6 +1,8 @@
 package authorization
 
 import (
+	"strings"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,24 +13,25 @@ import (
 type Authorizations map[string]map[Action]struct{}
 
 // NewAuthorizations initializes an Authorizations map based on user, group, and role authorizations.
-// It merges authorizations from user groups and roles, and adds entitlements.
+// It merges authorizations from user roles and groups, and adds entitlements.
+// Important: The role and group names are converted to lowercase for consistent matching.
 func NewAuthorizations(config *Config, ctx *gin.Context) Authorizations {
 
 	// Retrieve initial authorizations from the user
 	userAuth := config.UserAuthAdapter(ctx)
 	authorizations := userAuth.Authorizations()
 
-	// Merge group authorizations
-	for _, group := range userAuth.Groups() {
-		if groupAuth, ok := config.GroupMapper.Map()[group]; ok {
-			authorizations.Merge(groupAuth)
+	// Merge role authorizations
+	for _, role := range userAuth.Roles() {
+		if roleAuth, ok := config.RoleMappingAdapter.Map()[strings.ToLower(role)]; ok {
+			authorizations.Merge(roleAuth)
 		}
 	}
 
-	// Merge role authorizations
-	for _, role := range userAuth.Roles() {
-		if roleAuth, ok := config.RoleMapper.Map()[role]; ok {
-			authorizations.Merge(roleAuth)
+	// Merge group authorizations
+	for _, group := range userAuth.Groups() {
+		if groupAuth, ok := config.GroupMappingAdapter.Map()[strings.ToLower(group)]; ok {
+			authorizations.Merge(groupAuth)
 		}
 	}
 

@@ -55,8 +55,8 @@ func TestConfigRoleGroupMapper_Map(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotRoles := &ConfigRoleMapper{Config: tt.config}
-			gotGroups := &ConfigGroupMapper{Config: tt.config}
+			gotRoles := NewConfigRoleGroupMappingAdapter(func() map[string][]Entitlement { return tt.config.Roles })
+			gotGroups := NewConfigRoleGroupMappingAdapter(func() map[string][]Entitlement { return tt.config.Groups })
 			assert.Equal(t, tt.want, gotRoles.Map())
 			assert.Equal(t, tt.want, gotGroups.Map())
 		})

@@ -2,9 +2,10 @@ package authorization
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/spacecafe/gobox/gin-jwt"
 )
 
+// UserAuthAdapterFunc represents a function that accepts a Gin context and yields a UserAuthAdapter.
+// This factory method produces a fresh instance of UserAuthAdapter for every incoming request.
 type UserAuthAdapterFunc func(*gin.Context) UserAuthAdapter
 
 type UserAuthAdapter interface {
@@ -26,54 +27,4 @@ type UserAuthAdapter interface {
 	// - The values are empty structs.
 	// Example: {"resource1": {"read": {}, "write": {}}, "resource2": {"read": {}}}
 	Authorizations() Authorizations
-}
-
-type JWTUserAuthAdapter struct {
-	claims jwt.AuthorizationClaims
-}
-
-func NewJWTUserAuthAdapter(ctx *gin.Context) UserAuthAdapter {
-	return &JWTUserAuthAdapter{
-		claims: jwt.GetClaims(ctx),
-	}
-}
-
-func (r *JWTUserAuthAdapter) Roles() []string {
-	if r.claims != nil {
-		return r.claims.GetRoles()
-	}
-	return []string{}
-}
-
-func (r *JWTUserAuthAdapter) Groups() []string {
-	if r.claims != nil {
-		return r.claims.GetGroups()
-	}
-	return []string{}
-}
-
-func (r *JWTUserAuthAdapter) Entitlements() []string {
-	if r.claims != nil {
-		return r.claims.GetEntitlements()
-	}
-	return []string{}
-}
-
-func (r *JWTUserAuthAdapter) Authorizations() Authorizations {
-	result := make(Authorizations)
-	if r.claims != nil {
-		for _, detail := range r.claims.GetAuthorizationDetails() {
-			if detail.Type != "" {
-				for _, action := range detail.Actions {
-					if _, ok := Actions[Action(action)]; ok {
-						if _, ok := result[detail.Type]; !ok {
-							result[detail.Type] = make(map[Action]struct{})
-						}
-						result[detail.Type][Action(action)] = struct{}{}
-					}
-				}
-			}
-		}
-	}
-	return result
 }
