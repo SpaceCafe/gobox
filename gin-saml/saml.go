@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spacecafe/gosaml"
+	saml "github.com/spacecafe/gosaml"
 	"github.com/spacecafe/gosaml/samlsp"
 )
 

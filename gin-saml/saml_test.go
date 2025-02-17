@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/spacecafe/gobox/logger"
-	"github.com/spacecafe/gosaml"
+	saml "github.com/spacecafe/gosaml"
 	"github.com/spacecafe/gosaml/samlsp"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,28 +21,28 @@ func TestNew(t *testing.T) {
 		{
 			name: "invalid certificate",
 			arg:  &Config{Logger: logger.Default(), CertFile: "testdata/cert.pem", KeyFile: "testdata/invalid"},
-			want: func(t assert.TestingT, err error, i ...interface{}) bool {
+			want: func(t assert.TestingT, err error, _ ...interface{}) bool {
 				return assert.ErrorContains(t, err, ErrInvalidCertificates)
 			},
 		},
 		{
 			name: "invalid metadata url",
 			arg:  &Config{Logger: logger.Default(), CertFile: "testdata/cert.pem", KeyFile: "testdata/key.pem", IDPMetadataURL: "\x7f.invalid"},
-			want: func(t assert.TestingT, err error, i ...interface{}) bool {
+			want: func(t assert.TestingT, err error, _ ...interface{}) bool {
 				return assert.ErrorContains(t, err, ErrInvalidMetadataURL)
 			},
 		},
 		{
 			name: "invalid metadata",
 			arg:  &Config{Logger: logger.Default(), CertFile: "testdata/cert.pem", KeyFile: "testdata/key.pem", IDPMetadataURL: "http://example.invalid"},
-			want: func(t assert.TestingT, err error, i ...interface{}) bool {
+			want: func(t assert.TestingT, err error, _ ...interface{}) bool {
 				return assert.ErrorContains(t, err, ErrFetchMetadata)
 			},
 		},
 		{
 			name: "invalid uri",
 			arg:  &Config{Logger: logger.Default(), CertFile: "testdata/cert.pem", KeyFile: "testdata/key.pem", IDPMetadataURL: "https://mocksaml.com/api/saml/metadata", URI: "\x7f.invalid"},
-			want: func(t assert.TestingT, err error, i ...interface{}) bool {
+			want: func(t assert.TestingT, err error, _ ...interface{}) bool {
 				return assert.ErrorContains(t, err, ErrInvalidApplicationURL)
 			},
 		},
@@ -86,7 +86,7 @@ func TestSAML_RequireAccount(t *testing.T) {
 			})
 
 			recorder := httptest.NewRecorder()
-			request := httptest.NewRequest("GET", "/", nil)
+			request := httptest.NewRequest("GET", "/", http.NoBody)
 			if tt.setCookie {
 				session, _ := middleware.middleware.Session.(samlsp.CookieSessionProvider).Codec.New(&saml.Assertion{})
 				cookie, err := middleware.middleware.Session.(samlsp.CookieSessionProvider).Codec.Encode(session)
@@ -104,9 +104,9 @@ func TestSAML_RequireAccount(t *testing.T) {
 
 func TestSAML_SetOnError(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest("GET", "/", nil)
+	request := httptest.NewRequest("GET", "/", http.NoBody)
 	middleware := &SAML{middleware: &samlsp.Middleware{}}
-	errFunc := func(w http.ResponseWriter, r *http.Request, err error) {
+	errFunc := func(w http.ResponseWriter, r *http.Request, _ error) {
 		http.Redirect(w, r, "http://example.com/set-on-error", http.StatusBadRequest)
 	}
 	middleware.SetOnError(errFunc)
@@ -120,7 +120,7 @@ func TestSAML_SetOnError(t *testing.T) {
 
 func TestSAML_onError(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest("GET", "/", nil)
+	request := httptest.NewRequest("GET", "/", http.NoBody)
 	middleware := &SAML{config: &Config{DefaultErrorURI: "http://example.com/on-error", Logger: logger.Default()}}
 
 	middleware.onError(recorder, request, &saml.InvalidResponseError{})

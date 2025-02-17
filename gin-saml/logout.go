@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spacecafe/gosaml"
+	saml "github.com/spacecafe/gosaml"
 )
 
 // RequestType represents different types of SAML logout requests and responses.
@@ -29,25 +29,25 @@ var (
 func (r *SAML) validateLogoutRequest(ctx *gin.Context) (string, RequestType, error) {
 	// If POST request includes a SAML LogoutResponse:
 	// validating the logout response using SP's function and returning relevant data or error.
-	if data, ok := ctx.GetPostForm("SAMLResponse"); ok && len(data) > 0 {
+	if data, ok := ctx.GetPostForm("SAMLResponse"); ok && data != "" {
 		return data, LogoutResponsePost, r.middleware.ServiceProvider.ValidateLogoutResponseForm(data)
 	}
 
 	// If POST request includes a SAML LogoutRequest:
 	// validating the logout request using SP's function and returning relevant data or error.
-	if data, ok := ctx.GetPostForm("SAMLRequest"); ok && len(data) > 0 {
+	if data, ok := ctx.GetPostForm("SAMLRequest"); ok && data != "" {
 		return data, LogoutRequestPost, r.middleware.ServiceProvider.ValidateLogoutRequestForm(data)
 	}
 
 	// If GET request includes a SAML LogoutResponse:
 	// validating the logout response using SP's function and returning relevant data or error.
-	if data, ok := ctx.GetQuery("SAMLResponse"); ok && len(data) > 0 {
+	if data, ok := ctx.GetQuery("SAMLResponse"); ok && data != "" {
 		return data, LogoutResponseRedirect, r.middleware.ServiceProvider.ValidateLogoutResponseRedirect(data)
 	}
 
 	// If GET request includes a SAML LogoutRequest:
 	// validating the logout response using SP's function and returning relevant data or error.
-	if data, ok := ctx.GetQuery("SAMLRequest"); ok && len(data) > 0 {
+	if data, ok := ctx.GetQuery("SAMLRequest"); ok && data != "" {
 		return data, LogoutRequestRedirect, r.middleware.ServiceProvider.ValidateLogoutRequestRedirect(data)
 	}
 

@@ -9,12 +9,28 @@ import (
 	"unicode"
 
 	"github.com/spacecafe/gobox/logger"
-	"github.com/spacecafe/gosaml"
+	saml "github.com/spacecafe/gosaml"
+)
+
+const (
+	DefaultAuthnNameIDFormat   = string(saml.TransientNameIDFormat)
+	DefaultRedirectURI         = "/"
+	DefaultErrorURI            = "/"
+	DefaultCookieSameSite      = "strict"
+	DefaultCookieName          = "token"
+	DefaultMaxIssueDelay       = 30 * time.Minute
+	DefaultAllowIDPInitiated   = false
+	DefaultSignRequest         = true
+	DefaultUseArtifactResponse = false
+	DefaultForceAuthn          = false
 )
 
 var (
-	bindingURNs        = []string{saml.HTTPPostBinding, saml.HTTPRedirectBinding, saml.HTTPArtifactBinding, saml.SOAPBinding, saml.SOAPBindingV1}
-	validSameSite      = []string{"strict", "lax", "none"}
+	//nolint:gochecknoglobals // Maintain a set of binding URNs that are used throughout the application.
+	bindingURNs = []string{saml.HTTPPostBinding, saml.HTTPRedirectBinding, saml.HTTPArtifactBinding, saml.SOAPBinding, saml.SOAPBindingV1}
+	//nolint:gochecknoglobals // Maintain a set of valid "same-site" cookie values that are used throughout the application.
+	validSameSite = []string{"strict", "lax", "none"}
+	//nolint:gochecknoglobals // Maintain a set of valid NameID formats that are used throughout the application.
 	validNameIDFormats = []string{
 		string(saml.UnspecifiedNameIDFormat),
 		string(saml.EmailAddressNameIDFormat),
@@ -97,16 +113,16 @@ type Config struct {
 func NewConfig(log *logger.Logger) *Config {
 	config := &Config{
 		LogoutBindings:      []string{saml.HTTPPostBinding},
-		AuthnNameIDFormat:   string(saml.TransientNameIDFormat),
-		DefaultRedirectURI:  "/",
-		DefaultErrorURI:     "/",
-		CookieSameSite:      "strict",
-		CookieName:          "token",
-		MaxIssueDelay:       30 * time.Minute,
-		AllowIDPInitiated:   false,
-		SignRequest:         true,
-		UseArtifactResponse: false,
-		ForceAuthn:          false,
+		AuthnNameIDFormat:   DefaultAuthnNameIDFormat,
+		DefaultRedirectURI:  DefaultRedirectURI,
+		DefaultErrorURI:     DefaultErrorURI,
+		CookieSameSite:      DefaultCookieSameSite,
+		CookieName:          DefaultCookieName,
+		MaxIssueDelay:       DefaultMaxIssueDelay,
+		AllowIDPInitiated:   DefaultAllowIDPInitiated,
+		SignRequest:         DefaultSignRequest,
+		UseArtifactResponse: DefaultUseArtifactResponse,
+		ForceAuthn:          DefaultForceAuthn,
 	}
 
 	if log != nil {
