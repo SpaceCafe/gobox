@@ -42,7 +42,7 @@ func New(config *Config, rg *gin.RouterGroup) (*SAML, error) {
 	// Add routes to gin.
 	rg.GET("/saml/metadata", s.getMetadata)
 	rg.Match([]string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch}, "/saml/acs", s.handleACS)
-	rg.Match([]string{http.MethodGet}, "/saml/slo", s.handleSLO)
+	rg.Match([]string{http.MethodGet, http.MethodPost}, "/saml/slo", s.handleSLO)
 
 	return s, nil
 }
