@@ -16,6 +16,7 @@ const (
 	DefaultAuthnNameIDFormat   = string(saml.TransientNameIDFormat)
 	DefaultRedirectURI         = "/"
 	DefaultErrorURI            = "/"
+	DefaultPostLogoutURI       = "/"
 	DefaultCookieSameSite      = "strict"
 	DefaultCookieName          = "token"
 	DefaultMaxIssueDelay       = 30 * time.Minute
@@ -38,18 +39,19 @@ var (
 		string(saml.TransientNameIDFormat),
 	}
 
-	ErrInvalidLogoutBindings = errors.New("logout bindings contains a not valid urn")
-	ErrNoEntityID            = errors.New("entity id cannot be empty")
-	ErrInvalidIDPMetadataURL = errors.New("idp metadata url is not valid")
-	ErrNoCertFile            = errors.New("key file is set but cert_file is empty")
-	ErrNoKeyFile             = errors.New("cert file is set but key_file is empty")
-	ErrInvalidNameIDFormat   = errors.New("authn name id format is not valid")
-	ErrInvalidURI            = errors.New("uri is not valid")
-	ErrInvalidRedirectURI    = errors.New("default redirect uri is not valid")
-	ErrInvalidErrorURI       = errors.New("default error uri is not valid")
-	ErrInvalidCookieSameSite = errors.New("cookie same site is not valid")
-	ErrInvalidCookieName     = errors.New("cookie name contains invalid characters or starts with '$'")
-	ErrInvalidMaxIssueDelay  = errors.New("max issue delay must be greater than 0")
+	ErrInvalidLogoutBindings = errors.New("saml.logout_bindings contains a not valid urn")
+	ErrNoEntityID            = errors.New("saml.entity_id cannot be empty")
+	ErrInvalidIDPMetadataURL = errors.New("saml.idp_metadata_url is not valid")
+	ErrNoCertFile            = errors.New("saml.key_file is set but cert_file is empty")
+	ErrNoKeyFile             = errors.New("saml.cert_file is set but key_file is empty")
+	ErrInvalidNameIDFormat   = errors.New("saml.authn_name_id_format is not valid")
+	ErrInvalidURI            = errors.New("saml.uri is not valid")
+	ErrInvalidRedirectURI    = errors.New("saml.default_redirect_uri is not valid")
+	ErrInvalidErrorURI       = errors.New("saml.default_error_uri is not valid")
+	ErrInvalidPostLogoutURI  = errors.New("saml.post_logout_uri is not valid")
+	ErrInvalidCookieSameSite = errors.New("saml.cookie_same_site is not valid")
+	ErrInvalidCookieName     = errors.New("saml.cookie_name contains invalid characters or starts with '$'")
+	ErrInvalidMaxIssueDelay  = errors.New("saml.max_issue_delay must be greater than 0")
 )
 
 // Config holds configuration related to SAML as an authentication provider.
@@ -80,6 +82,9 @@ type Config struct {
 
 	// DefaultErrorURI is the default error URI used in authentication requests.
 	DefaultErrorURI string `json:"default_error_uri" yaml:"default_error_uri" mapstructure:"default_error_uri"`
+
+	// PostLogoutURI represents the redirect URI used after logout.
+	PostLogoutURI string `json:"post_logout_uri" yaml:"post_logout_uri" mapstructure:"post_logout_uri"`
 
 	// CookieSameSite specifies the cookie SameSite attribute.
 	CookieSameSite string `json:"cookie_same_site" yaml:"cookie_same_site" mapstructure:"cookie_same_site"`
@@ -116,6 +121,7 @@ func NewConfig(log *logger.Logger) *Config {
 		AuthnNameIDFormat:   DefaultAuthnNameIDFormat,
 		DefaultRedirectURI:  DefaultRedirectURI,
 		DefaultErrorURI:     DefaultErrorURI,
+		PostLogoutURI:       DefaultPostLogoutURI,
 		CookieSameSite:      DefaultCookieSameSite,
 		CookieName:          DefaultCookieName,
 		MaxIssueDelay:       DefaultMaxIssueDelay,
@@ -173,6 +179,10 @@ func (r *Config) Validate() error {
 
 	if _, err := url.ParseRequestURI(r.DefaultErrorURI); err != nil {
 		return ErrInvalidErrorURI
+	}
+
+	if _, err := url.ParseRequestURI(r.PostLogoutURI); err != nil {
+		return ErrInvalidPostLogoutURI
 	}
 
 	if !slices.Contains(validSameSite, strings.ToLower(r.CookieSameSite)) {

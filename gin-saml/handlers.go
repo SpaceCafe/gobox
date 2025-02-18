@@ -29,9 +29,9 @@ func (r *SAML) handleSLO(ctx *gin.Context) {
 	}
 
 	switch requestType {
-	// If it's a logout response then redirect to base path.
+	// If it's a logout response then redirect to configured post logout URI.
 	case LogoutResponsePost, LogoutResponseRedirect:
-		ctx.Redirect(http.StatusSeeOther, r.config.DefaultRedirectURI)
+		ctx.Redirect(http.StatusSeeOther, r.config.PostLogoutURI)
 
 	// If it's a logout request then delete session and response to IdP.
 	case LogoutRequestPost, LogoutRequestRedirect:
