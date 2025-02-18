@@ -42,13 +42,13 @@ func (r *SAML) validateLogoutRequest(ctx *gin.Context) (string, RequestType, err
 	// If GET request includes a SAML LogoutResponse:
 	// validating the logout response using SP's function and returning relevant data or error.
 	if data, ok := ctx.GetQuery("SAMLResponse"); ok && data != "" {
-		return data, LogoutResponseRedirect, r.middleware.ServiceProvider.ValidateLogoutResponseRedirect(data)
+		return data, LogoutResponseRedirect, r.middleware.ServiceProvider.ValidateLogoutResponseRedirect(data, ctx.Request)
 	}
 
 	// If GET request includes a SAML LogoutRequest:
 	// validating the logout response using SP's function and returning relevant data or error.
 	if data, ok := ctx.GetQuery("SAMLRequest"); ok && data != "" {
-		return data, LogoutRequestRedirect, r.middleware.ServiceProvider.ValidateLogoutRequestRedirect(data)
+		return data, LogoutRequestRedirect, r.middleware.ServiceProvider.ValidateLogoutRequestRedirect(data, ctx.Request)
 	}
 
 	// If no valid logout request is present in POST/GET data.

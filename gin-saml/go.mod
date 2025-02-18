@@ -4,9 +4,9 @@ go 1.23.6
 
 require (
 	github.com/gin-gonic/gin v1.10.0
-	github.com/spacecafe/gobox/gin-problems v0.0.0-20250214123035-ae634da429dc
-	github.com/spacecafe/gobox/logger v0.0.0-20250214123035-ae634da429dc
-	github.com/spacecafe/gosaml v0.4.15
+	github.com/spacecafe/gobox/gin-problems v0.0.0-20250218064648-d8c8f8cc8b2b
+	github.com/spacecafe/gobox/logger v0.0.0-20250218064648-d8c8f8cc8b2b
+	github.com/spacecafe/gosaml v0.4.16
 	github.com/stretchr/testify v1.10.0
 )
 

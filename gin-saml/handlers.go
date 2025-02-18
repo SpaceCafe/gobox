@@ -2,9 +2,23 @@ package saml
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 	problems "github.com/spacecafe/gobox/gin-problems"
+	saml "github.com/spacecafe/gosaml"
+)
+
+const (
+	LogoutRequestHTMLHead = `<html lang="en"><head><meta charset="utf-8"/><title>SAML Logout</title></head><body><noscript><p><strong>Note:</strong> Since your browser does not support JavaScript, you must press the Continue button once to proceed.</p></noscript>`
+	LogoutRequestHTMLFoot = `</body></html>`
+)
+
+var (
+	//nolint:gochecknoglobals // Used as http response value and cannot be declared as constant due to its type.
+	logoutRequestHTMLHead = []byte(LogoutRequestHTMLHead)
+	//nolint:gochecknoglobals // Used as http response value and cannot be declared as constant due to its type.
+	logoutRequestHTMLFoot = []byte(LogoutRequestHTMLFoot)
 )
 
 // getMetadata retrieves SAML metadata using middleware's ServeMetadata method.
@@ -23,8 +37,14 @@ func (r *SAML) handleSLO(ctx *gin.Context) {
 	// Parsing the form data / query param from HTTP Request.
 	data, requestType, err := r.validateLogoutRequest(ctx)
 	if err != nil {
-		r.config.Logger.Warn(err)
-		_ = ctx.Error(problems.ProblemBadRequest)
+		_ = ctx.Error(err)
+		problems.ProblemBadRequest.Abort(ctx)
+		return
+	}
+
+	// Delete the SAML session.
+	if err = r.DeleteSession(ctx); err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -33,46 +53,43 @@ func (r *SAML) handleSLO(ctx *gin.Context) {
 	case LogoutResponsePost, LogoutResponseRedirect:
 		ctx.Redirect(http.StatusSeeOther, r.config.PostLogoutURI)
 
-	// If it's a logout request then delete session and response to IdP.
+	// If it's a logout request then response to IdP.
 	case LogoutRequestPost, LogoutRequestRedirect:
-		// Delete the SAML session.
-		if err := r.middleware.Session.DeleteSession(ctx.Writer, ctx.Request); err != nil {
-			r.config.Logger.Warnf("unable to delete session: %v", err)
-			_ = ctx.Error(problems.ProblemInternalError)
-			return
-		}
-
 		// Create the logout request payload.
-		logoutRequest, err := newLogoutRequest(data)
-		if err != nil {
-			r.config.Logger.Warnf("unable to parse logout request: %v", err)
-			_ = ctx.Error(problems.ProblemBadRequest)
+		var logoutRequest *saml.LogoutRequest
+		if logoutRequest, err = newLogoutRequest(data); err != nil {
+			_ = ctx.Error(err)
+			problems.ProblemBadRequest.Abort(ctx)
 			return
 		}
 
-		// Create the response to the logout request.
-		switch requestType {
-		case LogoutRequestPost:
-			response, err := r.middleware.ServiceProvider.MakePostLogoutResponse(logoutRequest.ID, "")
+		if requestType == LogoutRequestPost {
+			// Create the response to the POST logout request.
+			var response []byte
+			response, err = r.middleware.ServiceProvider.MakePostLogoutResponse(logoutRequest.ID, "")
 			if err != nil {
-				r.config.Logger.Warnf("unable to build logout response: %v", err)
-				_ = ctx.Error(problems.ProblemInternalError)
+				_ = ctx.Error(err)
+				problems.ProblemInternalError.Abort(ctx)
 				return
 			}
 
 			// Write the HTML page with the logout response.
 			ctx.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
-			ctx.String(
-				http.StatusOK,
-				`<!DOCTYPE html><html><head><meta charset="utf-8" /></head><body><noscript><p><strong>Note:</strong> Since your browser does not support JavaScript, you must press the Continue button once to proceed.</p></noscript>%s</body></html>`,
-				response,
-			)
-
-		case LogoutRequestRedirect:
-		default:
-			_ = ctx.Error(problems.ProblemInternalError)
+			ctx.Status(http.StatusOK)
+			_, _ = ctx.Writer.Write(logoutRequestHTMLHead)
+			_, _ = ctx.Writer.Write(response)
+			_, _ = ctx.Writer.Write(logoutRequestHTMLFoot)
+		} else {
+			// Create the redirection for the logout request.
+			var redirectURL *url.URL
+			redirectURL, err = r.middleware.ServiceProvider.MakeRedirectLogoutResponse(logoutRequest.ID, "")
+			if err != nil {
+				_ = ctx.Error(err)
+				problems.ProblemInternalError.Abort(ctx)
+				return
+			}
+			ctx.Redirect(http.StatusSeeOther, redirectURL.String())
 		}
-
 	default:
 		_ = ctx.Error(problems.ProblemInternalError)
 	}
