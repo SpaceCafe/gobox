@@ -27,6 +27,7 @@ func InitializeValidators() error {
 		"sort_by_attributes": func(fl validator.FieldLevel) bool {
 			return sortByAttributesRegex.MatchString(fl.Field().String())
 		},
+		"readonly": func(_ validator.FieldLevel) bool { return false },
 	}
 
 	if validate, ok := binding.Validator.Engine().(*validator.Validate); ok {
