@@ -131,4 +131,10 @@ var (
 		http.StatusNotImplemented,
 		"The requested functionality is not implemented.",
 	)
+	ProblemRequestEntityTooLarge = NewProblem(
+		"",
+		http.StatusText(http.StatusRequestEntityTooLarge),
+		http.StatusRequestEntityTooLarge,
+		"The request entity is too large. Please reduce the size of your request and try again.",
+	)
 )

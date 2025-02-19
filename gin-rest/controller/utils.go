@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/aws/smithy-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -145,6 +146,7 @@ func HandleControllerError(ctx *gin.Context, err error) bool {
 func HandleServiceError(ctx *gin.Context, err error) bool {
 	var pgError *pgconn.PgError
 	var sqliteError sqlite3.Error
+	var awsAPIError smithy.APIError
 
 	switch {
 	case err == nil:
@@ -180,6 +182,15 @@ func HandleServiceError(ctx *gin.Context, err error) bool {
 				detail = pgError.Detail
 			}
 			HandleError(ctx, err, problems.ProblemResourceAlreadyExists.WithDetail(detail))
+		default:
+			HandleError(ctx, err, problems.ProblemInternalError)
+		}
+
+	// S3
+	case errors.As(err, &awsAPIError):
+		switch awsAPIError.ErrorCode() {
+		case "EntityTooLarge":
+			HandleError(ctx, err, problems.ProblemRequestEntityTooLarge)
 		default:
 			HandleError(ctx, err, problems.ProblemInternalError)
 		}
