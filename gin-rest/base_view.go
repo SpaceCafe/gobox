@@ -6,11 +6,11 @@ import (
 	"github.com/spacecafe/gobox/gin-rest/types"
 )
 
-// Ensure View implements IView interface.
-var _ types.IView = (*View)(nil)
+// Ensure BaseView implements IView interface.
+var _ types.IView = (*BaseView)(nil)
 
-// View is a struct that handles rendering of resources in different formats.
-type View struct {
+// BaseView is a struct that handles rendering of resources in different formats.
+type BaseView struct {
 	// renderer holds functions to render data into specific MIME types.
 	renderer map[string]func(page, pageSize, total, totalPages int, data any) types.IRender
 
@@ -22,43 +22,43 @@ type View struct {
 }
 
 // SetResource sets the resource for this view.
-func (r *View) SetResource(resource types.IResource) {
+func (r *BaseView) SetResource(resource types.IResource) {
 	r.IResourceGetter = resource
 	r.init()
 }
 
 // SupportedMimeTypes returns a pointer to the set of supported MIME types.
-func (r *View) SupportedMimeTypes() map[string]any {
+func (r *BaseView) SupportedMimeTypes() map[string]any {
 	return r.supportedMimeTypes
 }
 
 // Create handles the creation of a new entity and returns a render object.
-func (r *View) Create(ctx *gin.Context, entity any) types.IRender {
+func (r *BaseView) Create(ctx *gin.Context, entity any) types.IRender {
 	return r.newRender(ctx, entity)
 }
 
 // Read handles reading an entity and returns a render object.
-func (r *View) Read(ctx *gin.Context, entity any) types.IRender {
+func (r *BaseView) Read(ctx *gin.Context, entity any) types.IRender {
 	return r.newRender(ctx, entity)
 }
 
 // List handles listing entities and returns a render object.
-func (r *View) List(ctx *gin.Context, entities any) types.IRender {
+func (r *BaseView) List(ctx *gin.Context, entities any) types.IRender {
 	return r.newRender(ctx, entities)
 }
 
 // Update handles updating an entity and returns a render object.
-func (r *View) Update(ctx *gin.Context, entity any) types.IRender {
+func (r *BaseView) Update(ctx *gin.Context, entity any) types.IRender {
 	return r.newRender(ctx, entity)
 }
 
 // Delete handles deleting an entity and returns a render object.
-func (r *View) Delete(ctx *gin.Context, entity any) types.IRender {
+func (r *BaseView) Delete(ctx *gin.Context, entity any) types.IRender {
 	return r.newRender(ctx, entity)
 }
 
-// init initializes the renderer and supportedMimeTypes for the View.
-func (r *View) init() {
+// init initializes the renderer and supportedMimeTypes for the BaseView.
+func (r *BaseView) init() {
 	r.renderer = map[string]func(page, pageSize, total, totalPages int, data any) types.IRender{
 		(&render.JSON{}).MimeType(): newJSONRender,
 		(&render.YAML{}).MimeType(): newYAMLRender,
@@ -70,7 +70,7 @@ func (r *View) init() {
 }
 
 // newRender creates a render object based on the context and data.
-func (r *View) newRender(ctx *gin.Context, data any) types.IRender {
+func (r *BaseView) newRender(ctx *gin.Context, data any) types.IRender {
 	listOptions := GetListOptions(ctx)
 	page := listOptions.Page
 	pageSize := listOptions.PageSize
