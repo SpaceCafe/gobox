@@ -249,7 +249,7 @@ func TestREST_CRUD(t *testing.T) {
 			args: args{
 				method:       "GET",
 				path:         "999",
-				accept:       "application/json",
+				accept:       "*/*",
 				entitlements: []string{"read_books"},
 			},
 			wants: wants{

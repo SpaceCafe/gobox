@@ -62,10 +62,12 @@ func (r *BaseView) init() {
 	r.renderer = map[string]func(page, pageSize, total, totalPages int, data any) types.IRender{
 		(&render.JSON{}).MimeType(): newJSONRender,
 		(&render.YAML{}).MimeType(): newYAMLRender,
+		"*/*":                       newJSONRender,
 	}
 	r.supportedMimeTypes = map[string]any{
 		(&render.JSON{}).MimeType(): nil,
 		(&render.YAML{}).MimeType(): nil,
+		"*/*":                       nil,
 	}
 }
 
