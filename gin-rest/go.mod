@@ -5,22 +5,21 @@ go 1.23.6
 require (
 	github.com/aws/smithy-go v1.22.3
 	github.com/gin-gonic/gin v1.10.0
-	github.com/go-playground/validator/v10 v10.24.0
+	github.com/go-playground/validator/v10 v10.25.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/mattn/go-sqlite3 v1.14.24
-	github.com/spacecafe/gobox/gin-authorization v0.0.0-20250212122056-620c174b65b9
-	github.com/spacecafe/gobox/gin-jwt v0.0.0-20250212122056-620c174b65b9
-	github.com/spacecafe/gobox/gin-problems v0.0.0-20250212122056-620c174b65b9
+	github.com/spacecafe/gobox/gin-authorization v0.0.0-20250219130325-3dcac40f6a36
+	github.com/spacecafe/gobox/gin-jwt v0.0.0-20250219130325-3dcac40f6a36
+	github.com/spacecafe/gobox/gin-problems v0.0.0-20250219130325-3dcac40f6a36
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.25.12
 )
 
 require (
-	github.com/bytedance/sonic v1.12.8 // indirect
+	github.com/bytedance/sonic v1.12.9 // indirect
 	github.com/bytedance/sonic/loader v0.2.3 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -36,7 +35,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -46,11 +45,11 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
-	github.com/spacecafe/gobox/logger v0.0.0-20250212122056-620c174b65b9 // indirect
+	github.com/spacecafe/gobox/logger v0.0.0-20250219130325-3dcac40f6a36 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	golang.org/x/arch v0.14.0 // indirect
-	golang.org/x/crypto v0.33.0 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
