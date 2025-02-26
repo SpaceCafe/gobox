@@ -47,7 +47,10 @@ type IResourceGetter interface {
 	Router() gin.IRouter
 
 	// Resource retrieves an IResourceGetter by name, allowing for nested resources.
-	Resource(name string) IResourceGetter
+	Resource() IResourceGetter
+
+	// ResourceOf retrieves an IResourceGetter by name, allowing for nested resources.
+	ResourceOf(name string) IResourceGetter
 
 	// Controller returns the controller component of the resource.
 	Controller() IController

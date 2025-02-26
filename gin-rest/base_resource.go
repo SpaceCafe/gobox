@@ -49,7 +49,7 @@ func NewResource[T any](controller types.IController, service types.IService, vi
 
 	// Initialize the controller if it's not set.
 	if controller == nil {
-		res.controller = &Controller[T]{}
+		res.controller = &BaseController[T]{}
 	} else {
 		res.controller = controller
 	}
@@ -62,7 +62,7 @@ func NewResource[T any](controller types.IController, service types.IService, vi
 
 	// Initialize the view if it's not set.
 	if view == nil {
-		res.view = &View{}
+		res.view = &BaseView{}
 	} else {
 		res.view = view
 	}
@@ -104,8 +104,13 @@ func (r *BaseResource) Router() gin.IRouter {
 	return r.router
 }
 
-// Resource retrieves a specific resource by name from the Resources manager.
-func (r *BaseResource) Resource(name string) types.IResourceGetter {
+// Resource retrieves this resource from the Resources manager.
+func (r *BaseResource) Resource() types.IResourceGetter {
+	return r.resources.Get(r.name)
+}
+
+// ResourceOf retrieves a specific resource by name from the Resources manager.
+func (r *BaseResource) ResourceOf(name string) types.IResourceGetter {
 	return r.resources.Get(name)
 }
 
