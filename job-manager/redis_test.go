@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	//nolint:gochecknoglobals // Used for testing OnCompletion method.
 	onCompletionHookCalled = ""
 )
 
@@ -43,12 +44,12 @@ func TestNewRedisJobManager(t *testing.T) {
 	err = jm.StartWorker(context.Background(), func() {})
 	assert.NoError(t, err)
 
-	job := &TestJob{
+	entity := &TestJob{
 		ExitCode: -1,
 		StdIn:    "hello world",
 	}
 
-	jobID, err := jm.AddJob(job)
+	jobID, err := jm.AddJob(entity)
 	assert.NoError(t, err)
 	assert.NotNil(t, jobID)
 
@@ -58,19 +59,19 @@ func TestNewRedisJobManager(t *testing.T) {
 	assert.Equal(t, uint64(0), progress)
 	assert.NotNil(t, msgID)
 
-	err = jm.GetJob(jobID, job)
+	err = jm.GetJob(jobID, entity)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, job.ExitCode)
-	assert.Equal(t, "hello world", job.StdOut)
+	assert.Equal(t, 0, entity.ExitCode)
+	assert.Equal(t, "hello world", entity.StdOut)
 	assert.Equal(t, "TRUE", onCompletionHookCalled)
 
-	job = &TestJob{
+	entity = &TestJob{
 		ExitCode: -1,
 		StdIn:    "hello universe",
 	}
 
-	err = jm.AddJobAndWait(job)
+	err = jm.AddJobAndWait(entity)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, job.ExitCode)
-	assert.Equal(t, "hello universe", job.StdOut)
+	assert.Equal(t, 0, entity.ExitCode)
+	assert.Equal(t, "hello universe", entity.StdOut)
 }

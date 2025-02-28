@@ -18,6 +18,7 @@ const (
 )
 
 var (
+	//nolint:gochecknoglobals // Maintain a set of predefined backend names.
 	validBackends = []string{"redis"}
 
 	ErrNoWorkerName     = errors.New("worker name cannot be empty")

@@ -354,7 +354,6 @@ func (r *RedisJobManager[T]) sendJobCompletionMessage(jobID string) {
 			r.config.Logger.Warnf("failed to add completion message to job '%s' to completed jobs queue: %v", jobID, err)
 		}
 	}
-	return
 }
 
 // drainProcessingJobsQueue processes all remaining jobs in the worker queue that were left over
@@ -415,6 +414,7 @@ func (r *RedisJobManager[T]) watchCompletedJobsQueue() {
 				r.config.Logger.Warnf("failed to watch completed jobs queue '%s': %v", r.pendingJobsQueue, err)
 				continue
 			}
+			//nolint:mnd // Redis returns nil or an array of size 2.
 			if len(response) == 2 {
 				var entity T
 				entityRef := any(&entity).(IJobHooks)

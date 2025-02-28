@@ -1,11 +1,11 @@
 module github.com/spacecafe/gobox/job-manager
 
-go 1.22.11
+go 1.23.6
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/redis/go-redis/v9 v9.7.0
-	github.com/spacecafe/gobox/logger v0.0.0-20250128133231-4c352f5c4969
+	github.com/redis/go-redis/v9 v9.7.1
+	github.com/spacecafe/gobox/logger v0.0.0-20250228115515-99a82bb060f6
 	github.com/stretchr/testify v1.10.0
 )
 
