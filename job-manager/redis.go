@@ -406,12 +406,12 @@ func (r *RedisJobManager[T]) watchCompletedJobsQueue() {
 		case <-r.ctx.Done():
 			return
 		default:
-			response, err := r.client.BRPop(r.ctx, time.Second, r.processingJobsQueue).Result()
+			response, err := r.client.BRPop(r.ctx, time.Second, r.completedJobsQueue).Result()
 			if errors.Is(err, redis.Nil) {
 				continue
 			}
 			if err != nil {
-				r.config.Logger.Warnf("failed to watch completed jobs queue '%s': %v", r.pendingJobsQueue, err)
+				r.config.Logger.Warnf("failed to watch completed jobs queue '%s': %v", r.completedJobsQueue, err)
 				continue
 			}
 			//nolint:mnd // Redis returns nil or an array of size 2.
