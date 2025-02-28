@@ -23,6 +23,8 @@ const (
 )
 
 var (
+	_ IJobManager = (*RedisJobManager[any])(nil)
+
 	ErrTimeoutExceeded      = errors.New("timeout exceeded")
 	ErrJobManagerTerminated = errors.New("job manager was terminated")
 	ErrNoJobPointer         = errors.New("job must be a pointer")
@@ -30,7 +32,7 @@ var (
 
 // RedisJobManager manages jobs using Redis as the backend.
 // It handles job creation, monitoring, and retrieval.
-type RedisJobManager struct {
+type RedisJobManager[T any] struct {
 	// pendingJobsQueue holds the name of the queue used for pushing new jobs.
 	pendingJobsQueue string
 
@@ -46,10 +48,6 @@ type RedisJobManager struct {
 	// done is a function to signal completion or cancellation of jobs.
 	done func()
 
-	// jobFactory is a function that creates new Job instances. This is necessary
-	// because we need to know what type of job to unmarshal into when retrieving from Redis.
-	jobFactory func() Job
-
 	// config holds the configuration settings for the RedisJobManager.
 	config *Config
 
@@ -59,8 +57,8 @@ type RedisJobManager struct {
 	// readyCond is a condition variable used to signal readiness.
 	readyCond *sync.Cond
 
-	// hookContext is passed to Job hooks as parameter.
-	hookContext JobHookContext
+	// hookContext is passed to IJob hooks as parameter.
+	hookContext IJobHookContext
 
 	// readyMutex is a mutex used to protect access to the ready condition.
 	readyMutex sync.Mutex
@@ -68,38 +66,38 @@ type RedisJobManager struct {
 	// ready indicates whether the job manager is ready to process jobs.
 	ready bool
 
-	// hasJobHooks indicates whether the job type implements JobHooks interface.
+	// hasJobHooks indicates whether the job type implements IJobHooks interface.
 	hasJobHooks bool
 }
 
 // NewRedisJobManager initializes a new RedisJobManager with the given configuration.
 // It returns the job manager instance and any error encountered during initialization.
-func NewRedisJobManager(config *Config, jobFactory func() Job) (jobManager *RedisJobManager, err error) {
-	jobManager = &RedisJobManager{
+func NewRedisJobManager[T any](config *Config) (jobManager *RedisJobManager[T], err error) {
+
+	jobManager = &RedisJobManager[T]{
 		pendingJobsQueue:    config.RedisNamespace + ":" + RedisQueuePendingJobs,
 		completedJobsQueue:  config.RedisNamespace + ":" + RedisQueueCompletedJobs,
 		processingJobsQueue: config.RedisNamespace + ":" + config.WorkerName,
-		jobFactory:          jobFactory,
 		config:              config,
 		hookContext:         make(KVStorage),
 		ready:               false,
 		hasJobHooks:         false,
 	}
 	jobManager.readyCond = sync.NewCond(&jobManager.readyMutex)
-	if _, ok := jobFactory().(JobHooks); ok {
+	if _, ok := any((*T)(nil)).(IJobHooks); ok {
 		jobManager.hasJobHooks = true
 	}
 	return
 }
 
 // SetHookContext sets a key-value pair in the hook context.
-func (r *RedisJobManager) SetHookContext(key string, value any) {
+func (r *RedisJobManager[T]) SetHookContext(key string, value any) {
 	r.hookContext.Set(key, value)
 }
 
 // Start begins the operation of the RedisJobManager.
 // It requires a context and a done function to handle graceful shutdown.
-func (r *RedisJobManager) Start(ctx context.Context, done func()) (err error) {
+func (r *RedisJobManager[T]) Start(ctx context.Context, done func()) (err error) {
 	r.config.Logger.Info("starting redis job manager")
 	r.ctx = ctx
 	r.done = done
@@ -120,7 +118,7 @@ func (r *RedisJobManager) Start(ctx context.Context, done func()) (err error) {
 
 // StartWorker initializes a worker for the RedisJobManager.
 // It starts by calling Start and then begins draining the worker queue and watching the jobs queue.
-func (r *RedisJobManager) StartWorker(ctx context.Context, done func()) (err error) {
+func (r *RedisJobManager[T]) StartWorker(ctx context.Context, done func()) (err error) {
 	if err = r.Start(ctx, done); err != nil {
 		return
 	}
@@ -132,14 +130,14 @@ func (r *RedisJobManager) StartWorker(ctx context.Context, done func()) (err err
 }
 
 // Stop gracefully stops the RedisJobManager and closes the Redis client connection.
-func (r *RedisJobManager) Stop() {
+func (r *RedisJobManager[T]) Stop() {
 	defer r.done()
 	r.config.Logger.Info("stopping redis job manager")
 	_ = r.client.Close()
 }
 
 // createClient initializes the Redis client with the configured options.
-func (r *RedisJobManager) createClient() {
+func (r *RedisJobManager[T]) createClient() {
 	r.client = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", r.config.RedisHost, r.config.RedisPort),
 		Username: r.config.RedisUsername,
@@ -150,7 +148,7 @@ func (r *RedisJobManager) createClient() {
 
 // monitorClientConnection continuously checks the connection to Redis.
 // It updates the ready state based on the connection status.
-func (r *RedisJobManager) monitorClientConnection() {
+func (r *RedisJobManager[T]) monitorClientConnection() {
 	for {
 		if _, err := r.client.Ping(r.ctx).Result(); err != nil {
 			r.setReady(false)
@@ -168,12 +166,12 @@ func (r *RedisJobManager) monitorClientConnection() {
 }
 
 // IsReady returns the current readiness state of the RedisJobManager.
-func (r *RedisJobManager) IsReady() bool {
+func (r *RedisJobManager[T]) IsReady() bool {
 	return r.ready
 }
 
 // WaitUntilReady blocks until the RedisJobManager is ready to process jobs.
-func (r *RedisJobManager) WaitUntilReady() {
+func (r *RedisJobManager[T]) WaitUntilReady() {
 	r.readyMutex.Lock()
 	defer r.readyMutex.Unlock()
 	for !r.IsReady() {
@@ -182,7 +180,7 @@ func (r *RedisJobManager) WaitUntilReady() {
 }
 
 // setReady updates the readiness state and notifies any waiting goroutines.
-func (r *RedisJobManager) setReady(ready bool) {
+func (r *RedisJobManager[T]) setReady(ready bool) {
 	r.readyMutex.Lock()
 	defer r.readyMutex.Unlock()
 	r.ready = ready
@@ -190,9 +188,9 @@ func (r *RedisJobManager) setReady(ready bool) {
 }
 
 // SetJob stores a job to the Redis store.
-func (r *RedisJobManager) SetJob(jobID string, job Job) (err error) {
-	r.config.Logger.Debugf("adding job '%s': %+v", jobID, job)
-	_, err = r.client.JSONSet(r.ctx, r.config.RedisNamespace+":"+jobID, "$", job).Result()
+func (r *RedisJobManager[T]) SetJob(jobID string, entity any) (err error) {
+	r.config.Logger.Debugf("adding job '%s': %+v", jobID, entity)
+	_, err = r.client.JSONSet(r.ctx, r.config.RedisNamespace+":"+jobID, "$", entity).Result()
 	if err != nil {
 		r.config.Logger.Warnf("failed to add job '%s': %v", jobID, err)
 	}
@@ -200,8 +198,8 @@ func (r *RedisJobManager) SetJob(jobID string, job Job) (err error) {
 }
 
 // GetJob retrieves a job from Redis using the provided jobID and populates the job parameter.
-func (r *RedisJobManager) GetJob(jobID string, job Job) (err error) {
-	if reflect.TypeOf(job).Kind() != reflect.Ptr {
+func (r *RedisJobManager[T]) GetJob(jobID string, entity IJob) (err error) {
+	if reflect.TypeOf(entity).Kind() != reflect.Ptr {
 		return ErrNoJobPointer
 	}
 
@@ -212,13 +210,13 @@ func (r *RedisJobManager) GetJob(jobID string, job Job) (err error) {
 		r.config.Logger.Warnf("failed to get job '%s': %v", jobID, err)
 		return
 	}
-	return json.Unmarshal([]byte(jobString), job)
+	return json.Unmarshal([]byte(jobString), entity)
 }
 
 // GetJobProgress retrieves the current state and progress of a job identified by jobID.
 // It uses the lastArtefact to determine where to start reading the stream from.
 // The function returns the current state, progress, and the last message ID as an artefact.
-func (r *RedisJobManager) GetJobProgress(jobID string, lastArtefact any) (state string, progress uint64, artefact any) {
+func (r *RedisJobManager[T]) GetJobProgress(jobID string, lastArtefact any) (state string, progress uint64, artefact any) {
 	lastMessageID, ok := lastArtefact.(string)
 	if !ok {
 		lastMessageID = "0"
@@ -251,7 +249,7 @@ func (r *RedisJobManager) GetJobProgress(jobID string, lastArtefact any) (state 
 
 // SetJobProgress updates the progress of a job identified by jobID in the Redis stream.
 // It sets the state and progress values for the specified job.
-func (r *RedisJobManager) SetJobProgress(jobID, state string, progress uint64) {
+func (r *RedisJobManager[T]) SetJobProgress(jobID, state string, progress uint64) {
 	_, err := r.client.XAdd(r.ctx, &redis.XAddArgs{
 		Stream: r.config.RedisNamespace + ":" + jobID + ":" + RedisStreamJobProgress,
 		Values: map[string]interface{}{
@@ -265,7 +263,7 @@ func (r *RedisJobManager) SetJobProgress(jobID, state string, progress uint64) {
 }
 
 // AddJob adds a job to the Redis store and returns the job ID.
-func (r *RedisJobManager) AddJob(job Job) (jobID string, err error) {
+func (r *RedisJobManager[T]) AddJob(entity IJob) (jobID string, err error) {
 	jobUUID, err := uuid.NewV7()
 	if err != nil {
 		return
@@ -274,12 +272,12 @@ func (r *RedisJobManager) AddJob(job Job) (jobID string, err error) {
 
 	r.WaitUntilReady()
 
-	return jobID, r.addJob(jobID, job)
+	return jobID, r.addJob(jobID, entity)
 }
 
 // AddJobAndWait adds a job and waits for its completion.
 // It subscribes to a Redis channel to receive completion notifications.
-func (r *RedisJobManager) AddJobAndWait(job Job) (err error) {
+func (r *RedisJobManager[T]) AddJobAndWait(entity IJob) (err error) {
 	jobID, err := uuid.NewV7()
 	if err != nil {
 		return
@@ -292,7 +290,7 @@ func (r *RedisJobManager) AddJobAndWait(job Job) (err error) {
 		_ = subscription.Close()
 	}(subscription)
 
-	err = r.addJob(jobID.String(), job)
+	err = r.addJob(jobID.String(), entity)
 	if err != nil {
 		return
 	}
@@ -302,7 +300,7 @@ func (r *RedisJobManager) AddJobAndWait(job Job) (err error) {
 	select {
 	case <-message:
 		r.config.Logger.Debugf("job '%s' was completed", jobID)
-		return r.GetJob(jobID.String(), job)
+		return r.GetJob(jobID.String(), entity)
 	case <-time.After(r.config.Timeout):
 		r.config.Logger.Infof("job '%s' was timed out", jobID)
 		return ErrTimeoutExceeded
@@ -313,8 +311,8 @@ func (r *RedisJobManager) AddJobAndWait(job Job) (err error) {
 
 // addJob adds a job to the Redis store and sets its expiration.
 // It returns any error encountered during the operation.
-func (r *RedisJobManager) addJob(jobID string, job Job) (err error) {
-	err = r.SetJob(jobID, job)
+func (r *RedisJobManager[T]) addJob(jobID string, entity IJob) (err error) {
+	err = r.SetJob(jobID, entity)
 	if err != nil {
 		return
 	}
@@ -340,7 +338,7 @@ func (r *RedisJobManager) addJob(jobID string, job Job) (err error) {
 
 // sendJobCompletionMessage publishes a job completion message to the global completion queue to initiate
 // post-processing tasks and job-specific completion channel to notify any synchronously waiting subscribers.
-func (r *RedisJobManager) sendJobCompletionMessage(jobID string) {
+func (r *RedisJobManager[T]) sendJobCompletionMessage(jobID string) {
 	var subscribers int64
 	var err error
 	subscribers, err = r.client.Publish(r.ctx, r.config.RedisNamespace+":"+jobID+":"+RedisChannelJobCompleted, "1").Result()
@@ -361,7 +359,7 @@ func (r *RedisJobManager) sendJobCompletionMessage(jobID string) {
 
 // drainProcessingJobsQueue processes all remaining jobs in the worker queue that were left over
 // from the previous shutdown or restart.
-func (r *RedisJobManager) drainProcessingJobsQueue() {
+func (r *RedisJobManager[T]) drainProcessingJobsQueue() {
 	r.config.Logger.Infof("drain processing jobs queue '%s'", r.processingJobsQueue)
 	for {
 		select {
@@ -379,7 +377,7 @@ func (r *RedisJobManager) drainProcessingJobsQueue() {
 
 // watchPendingJobsQueue monitors the pending jobs queue and transfers new jobs to the processing jobs queue
 // to ensure they are processed even after a system shutdown or restart.
-func (r *RedisJobManager) watchPendingJobsQueue() {
+func (r *RedisJobManager[T]) watchPendingJobsQueue() {
 	r.config.Logger.Infof("watch pending jobs queue '%s'", r.pendingJobsQueue)
 	for {
 		select {
@@ -402,14 +400,14 @@ func (r *RedisJobManager) watchPendingJobsQueue() {
 }
 
 // watchCompletedJobsQueue initiate post-processing tasks of completed jobs.
-func (r *RedisJobManager) watchCompletedJobsQueue() {
+func (r *RedisJobManager[T]) watchCompletedJobsQueue() {
 	r.config.Logger.Infof("watch completed jobs queue '%s'", r.completedJobsQueue)
 	for {
 		select {
 		case <-r.ctx.Done():
 			return
 		default:
-			jobIDs, err := r.client.BRPop(r.ctx, time.Second, r.processingJobsQueue).Result()
+			response, err := r.client.BRPop(r.ctx, time.Second, r.processingJobsQueue).Result()
 			if errors.Is(err, redis.Nil) {
 				continue
 			}
@@ -417,23 +415,24 @@ func (r *RedisJobManager) watchCompletedJobsQueue() {
 				r.config.Logger.Warnf("failed to watch completed jobs queue '%s': %v", r.pendingJobsQueue, err)
 				continue
 			}
-			for _, jobID := range jobIDs {
-				if job, ok := r.jobFactory().(JobHooks); ok {
-					err = r.GetJob(jobID, job)
-					if err != nil {
-						r.config.Logger.Warnf("failed to initiate post-processing tasks for job '%s': %v", jobID, err)
-						continue
-					}
-					job.OnCompletion(r.hookContext)
+			if len(response) == 2 {
+				var entity T
+				entityRef := any(&entity).(IJobHooks)
+				err = r.GetJob(response[1], entityRef)
+				if err != nil {
+					r.config.Logger.Warnf("failed to initiate post-processing tasks for job '%s': %v", response[1], err)
+					continue
 				}
+				entityRef.OnCompletion(r.hookContext)
 			}
 		}
 	}
 }
 
 // processJob handles the execution of a specific job.
-func (r *RedisJobManager) processJob(jobID string) {
-	job := r.jobFactory()
+func (r *RedisJobManager[T]) processJob(jobID string) {
+	var entity T
+	entityPtr := any(&entity).(IJob)
 	r.config.Logger.Infof("processing job '%s'", jobID)
 
 	defer func() {
@@ -445,20 +444,20 @@ func (r *RedisJobManager) processJob(jobID string) {
 	}()
 
 	r.SetJobProgress(jobID, StateRunning, 0)
-	err := r.GetJob(jobID, job)
+	err := r.GetJob(jobID, entityPtr)
 	if err != nil {
 		r.SetJobProgress(jobID, StateFailed, 0)
 		return
 	}
 
-	err = job.Start()
+	err = entityPtr.Start()
 	if err != nil {
 		r.config.Logger.Warnf("failed to start job '%s': %v", jobID, err)
 		r.SetJobProgress(jobID, StateFailed, 0)
 		return
 	}
 
-	if err = r.SetJob(jobID, job); err != nil {
+	if err = r.SetJob(jobID, entityPtr); err != nil {
 		r.SetJobProgress(jobID, StateFailed, 0)
 		return
 	}

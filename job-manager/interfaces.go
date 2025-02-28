@@ -44,13 +44,13 @@ type IJobManager interface {
 	WaitUntilReady()
 
 	// AddJob adds a new job to the manager and returns a unique identifier for the job.
-	AddJob(job Job) (jobID string, err error)
+	AddJob(entity IJob) (jobID string, err error)
 
 	// AddJobAndWait adds a new job to the manager and waits for its completion, returning the completed job.
-	AddJobAndWait(job Job) (err error)
+	AddJobAndWait(entity IJob) (err error)
 
 	// GetJob retrieves a job from the manager using its unique identifier.
-	GetJob(jobID string, job Job) (err error)
+	GetJob(jobID string, entity IJob) (err error)
 
 	// GetJobProgress retrieves the current state and progress of a job.
 	// Depending on the implementation, this method may also return an optional artifact,
@@ -64,24 +64,24 @@ type IJobManager interface {
 	SetHookContext(key string, value any)
 }
 
-// Job represents a task or work item that provides additional
+// IJob represents a task or work item that provides additional
 // functionality related to job management and status tracking.
-type Job interface {
+type IJob interface {
 	// Start initiates the execution of the job.
 	Start() error
 }
 
-// JobHooks extends the Job interface with optional hooks, processed by the job manager after completion.
-type JobHooks interface {
-	Job
+// IJobHooks extends the IJob interface with optional hooks, processed by the job manager after completion.
+type IJobHooks interface {
+	IJob
 	// OnCompletion is a hook called by the JobManager when the job is completed.
 	// This method can be used for any post-processing tasks, such as cleanup, logging,
 	// notifying other systems, or persisting job results into a database.
-	OnCompletion(ctx JobHookContext)
+	OnCompletion(ctx IJobHookContext)
 }
 
-// JobHookContext provides an interface for accessing and modifying context information related to job hooks.
-type JobHookContext interface {
+// IJobHookContext provides an interface for accessing and modifying context information related to job hooks.
+type IJobHookContext interface {
 	// Get retrieves the value associated with the given key from the context.
 	Get(key string) any
 

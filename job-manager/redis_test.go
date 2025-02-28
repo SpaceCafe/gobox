@@ -19,17 +19,13 @@ type TestJob struct {
 	StdErr   string
 }
 
-func NewTestJob() Job {
-	return &TestJob{}
-}
-
 func (r *TestJob) Start() error {
 	r.ExitCode = 0
 	r.StdOut = r.StdIn
 	return nil
 }
 
-func (r *TestJob) OnCompletion(ctx JobHookContext) {
+func (r *TestJob) OnCompletion(ctx IJobHookContext) {
 	onCompletionHookCalled = ctx.Get("scope").(string)
 }
 
@@ -38,7 +34,7 @@ func TestNewRedisJobManager(t *testing.T) {
 	config.RedisHost = "127.0.0.1"
 	config.RedisNamespace = "test"
 	config.RedisTTL = time.Minute
-	jm, err := NewRedisJobManager(config, NewTestJob)
+	jm, err := NewRedisJobManager[TestJob](config)
 	assert.NoError(t, err)
 	assert.NotNil(t, jm)
 	jm.SetHookContext("scope", "FALSE")
