@@ -40,3 +40,13 @@ func InitializeValidators() error {
 	}
 	return ErrNoValidatorEngine
 }
+
+// RegisterValidation registers a new validation function with the given tag.
+// It returns an error if no validator engine is found or if the registration fails.
+// This function can be used to add custom validations dynamically at runtime.
+func RegisterValidation(tag string, fn validator.Func) error {
+	if validate, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		return validate.RegisterValidation(tag, fn)
+	}
+	return ErrNoValidatorEngine
+}
