@@ -59,6 +59,9 @@ type IJobManager interface {
 
 	// SetJobProgress updates the state and progress of a job within the manager.
 	SetJobProgress(jobID, state string, progress uint64)
+
+	// SetHookContext stores additional context information related to the job hooks.
+	SetHookContext(key string, value any)
 }
 
 // Job represents a task or work item that provides additional
@@ -74,5 +77,14 @@ type JobHooks interface {
 	// OnCompletion is a hook called by the JobManager when the job is completed.
 	// This method can be used for any post-processing tasks, such as cleanup, logging,
 	// notifying other systems, or persisting job results into a database.
-	OnCompletion()
+	OnCompletion(ctx JobHookContext)
+}
+
+// JobHookContext provides an interface for accessing and modifying context information related to job hooks.
+type JobHookContext interface {
+	// Get retrieves the value associated with the given key from the context.
+	Get(key string) any
+
+	// Set stores a value in the context under the specified key.
+	Set(key string, value any)
 }

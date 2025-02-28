@@ -59,6 +59,9 @@ type RedisJobManager struct {
 	// readyCond is a condition variable used to signal readiness.
 	readyCond *sync.Cond
 
+	// hookContext is passed to Job hooks as parameter.
+	hookContext JobHookContext
+
 	// readyMutex is a mutex used to protect access to the ready condition.
 	readyMutex sync.Mutex
 
@@ -78,6 +81,7 @@ func NewRedisJobManager(config *Config, jobFactory func() Job) (jobManager *Redi
 		processingJobsQueue: config.RedisNamespace + ":" + config.WorkerName,
 		jobFactory:          jobFactory,
 		config:              config,
+		hookContext:         make(KVStorage),
 		ready:               false,
 		hasJobHooks:         false,
 	}
@@ -86,6 +90,11 @@ func NewRedisJobManager(config *Config, jobFactory func() Job) (jobManager *Redi
 		jobManager.hasJobHooks = true
 	}
 	return
+}
+
+// SetHookContext sets a key-value pair in the hook context.
+func (r *RedisJobManager) SetHookContext(key string, value any) {
+	r.hookContext.Set(key, value)
 }
 
 // Start begins the operation of the RedisJobManager.
@@ -415,7 +424,7 @@ func (r *RedisJobManager) watchCompletedJobsQueue() {
 						r.config.Logger.Warnf("failed to initiate post-processing tasks for job '%s': %v", jobID, err)
 						continue
 					}
-					job.OnCompletion()
+					job.OnCompletion(r.hookContext)
 				}
 			}
 		}

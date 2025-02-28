@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	onCompletionHookCalled = false
+	onCompletionHookCalled = ""
 )
 
 type TestJob struct {
@@ -29,8 +29,8 @@ func (r *TestJob) Start() error {
 	return nil
 }
 
-func (r *TestJob) OnCompletion() {
-	onCompletionHookCalled = true
+func (r *TestJob) OnCompletion(ctx JobHookContext) {
+	onCompletionHookCalled = ctx.Get("scope").(string)
 }
 
 func TestNewRedisJobManager(t *testing.T) {
@@ -41,6 +41,8 @@ func TestNewRedisJobManager(t *testing.T) {
 	jm, err := NewRedisJobManager(config, NewTestJob)
 	assert.NoError(t, err)
 	assert.NotNil(t, jm)
+	jm.SetHookContext("scope", "FALSE")
+	jm.SetHookContext("scope", "TRUE")
 
 	err = jm.StartWorker(context.Background(), func() {})
 	assert.NoError(t, err)
@@ -64,7 +66,7 @@ func TestNewRedisJobManager(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, job.ExitCode)
 	assert.Equal(t, "hello world", job.StdOut)
-	assert.True(t, onCompletionHookCalled)
+	assert.Equal(t, "TRUE", onCompletionHookCalled)
 
 	job = &TestJob{
 		ExitCode: -1,
