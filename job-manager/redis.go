@@ -228,11 +228,8 @@ func (r *RedisJobManager[T]) GetJobProgress(jobID string, lastArtefact any, time
 	}).Result()
 
 	// If the stream is empty or there's an error, return the default values.
-	if errors.Is(err, redis.Nil) {
-		return "", 0, lastArtefact
-	}
 	if err != nil || len(stream) == 0 {
-		return StatePending, 0, "0"
+		return "", 0, lastArtefact
 	}
 
 	lastMessage := stream[0].Messages[len(stream[0].Messages)-1]
@@ -336,6 +333,7 @@ func (r *RedisJobManager[T]) addJob(jobID string, entity IJob) (err error) {
 	if err != nil {
 		r.config.Logger.Warnf("failed to add job '%s' to queue: %v", jobID, err)
 	}
+	r.SetJobProgress(StatePending, jobID, 0)
 	return
 }
 
