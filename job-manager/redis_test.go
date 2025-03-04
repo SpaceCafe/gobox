@@ -54,7 +54,7 @@ func TestNewRedisJobManager(t *testing.T) {
 	assert.NotNil(t, jobID)
 
 	time.Sleep(1 * time.Second)
-	state, progress, msgID := jm.GetJobProgress(jobID, nil)
+	state, progress, msgID := jm.GetJobProgress(jobID, nil, time.Second)
 	assert.Equal(t, StateCompleted, state)
 	assert.Equal(t, uint64(0), progress)
 	assert.NotNil(t, msgID)

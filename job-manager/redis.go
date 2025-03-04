@@ -216,7 +216,7 @@ func (r *RedisJobManager[T]) GetJob(jobID string, entity IJob) (err error) {
 // GetJobProgress retrieves the current state and progress of a job identified by jobID.
 // It uses the lastArtefact to determine where to start reading the stream from.
 // The function returns the current state, progress, and the last message ID as an artefact.
-func (r *RedisJobManager[T]) GetJobProgress(jobID string, lastArtefact any) (state string, progress uint64, artefact any) {
+func (r *RedisJobManager[T]) GetJobProgress(jobID string, lastArtefact any, timeout time.Duration) (state string, progress uint64, artefact any) {
 	lastMessageID, ok := lastArtefact.(string)
 	if !ok {
 		lastMessageID = "0"
@@ -224,10 +224,13 @@ func (r *RedisJobManager[T]) GetJobProgress(jobID string, lastArtefact any) (sta
 
 	stream, err := r.client.XRead(r.ctx, &redis.XReadArgs{
 		Streams: []string{r.config.RedisNamespace + ":" + jobID + ":" + RedisStreamJobProgress, lastMessageID},
-		Block:   0,
+		Block:   timeout,
 	}).Result()
 
 	// If the stream is empty or there's an error, return the default values.
+	if errors.Is(err, redis.Nil) {
+		return "", 0, lastArtefact
+	}
 	if err != nil || len(stream) == 0 {
 		return StatePending, 0, "0"
 	}

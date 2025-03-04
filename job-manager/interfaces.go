@@ -2,6 +2,7 @@ package job_manager
 
 import (
 	"context"
+	"time"
 )
 
 const (
@@ -55,7 +56,7 @@ type IJobManager interface {
 	// GetJobProgress retrieves the current state and progress of a job.
 	// Depending on the implementation, this method may also return an optional artifact,
 	// such as a message ID that can be utilized in a subsequent request.
-	GetJobProgress(jobID string, lastArtefact any) (state string, progress uint64, artefact any)
+	GetJobProgress(jobID string, lastArtefact any, timeout time.Duration) (state string, progress uint64, artefact any)
 
 	// SetJobProgress updates the state and progress of a job within the manager.
 	SetJobProgress(jobID, state string, progress uint64)
