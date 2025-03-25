@@ -317,7 +317,7 @@ func (r *RedisJobManager[T]) addJob(jobID string, entity IJob) (err error) {
 		return
 	}
 
-	r.SetJobProgress(StatePending, jobID, 0)
+	r.SetJobProgress(jobID, StatePending, 0)
 
 	for _, key := range []string{
 		r.config.RedisNamespace + ":" + jobID,
@@ -333,7 +333,7 @@ func (r *RedisJobManager[T]) addJob(jobID string, entity IJob) (err error) {
 	if err != nil {
 		r.config.Logger.Warnf("failed to add job '%s' to queue: %v", jobID, err)
 	}
-	r.SetJobProgress(StatePending, jobID, 0)
+	r.SetJobProgress(jobID, StatePending, 0)
 	return
 }
 
