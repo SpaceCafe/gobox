@@ -1,9 +1,8 @@
 package rest
 
 import (
-	"database/sql"
-
 	"github.com/google/uuid"
+	"github.com/guregu/null/v6"
 	"github.com/spacecafe/gobox/gin-rest/types"
 	"gorm.io/gorm"
 )
@@ -26,13 +25,13 @@ type Model struct {
 	ID string `json:"id,omitempty" yaml:"id,omitempty" xml:"id,omitempty" gorm:"type:uuid;primary_key;<-:create" binding:"omitempty"`
 
 	// CreatedAt is a timestamp indicating when the Model was created.
-	CreatedAt *sql.NullTime `json:"created_at,omitempty" yaml:"created_at,omitempty" xml:"created_at,omitempty" gorm:"autoCreateTime" binding:"omitempty"`
+	CreatedAt *null.Time `json:"created_at,omitempty" yaml:"created_at,omitempty" xml:"created_at,omitempty" gorm:"autoCreateTime" binding:"omitempty"`
 
 	// UpdatedAt is a timestamp indicating when the Model was last updated.
-	UpdatedAt *sql.NullTime `json:"updated_at,omitempty" yaml:"updated_at,omitempty" xml:"updated_at,omitempty" gorm:"autoUpdateTime" binding:"omitempty"`
+	UpdatedAt *null.Time `json:"updated_at,omitempty" yaml:"updated_at,omitempty" xml:"updated_at,omitempty" gorm:"autoUpdateTime" binding:"omitempty"`
 
 	// DeletedAt is a timestamp indicating when the Model was deleted, used for soft deletes.
-	DeletedAt *sql.NullTime `json:"deleted_at,omitempty" yaml:"deleted_at,omitempty" xml:"deleted_at,omitempty" gorm:"index" binding:"omitempty"`
+	DeletedAt *null.Time `json:"deleted_at,omitempty" yaml:"deleted_at,omitempty" xml:"deleted_at,omitempty" gorm:"index" binding:"omitempty"`
 }
 
 // GetID returns the unique identifier of the model.
