@@ -15,6 +15,7 @@ import (
 // If no supported MIME type is found, it aborts the request with a ProblemUnsupportedMediaType error.
 func AcceptMiddleware(supportedMimetypes map[string]any) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		// Accept header
 		for _, mimetype := range ParseAcceptHeader(ctx.GetHeader(types.AcceptHeader)) {
 			if _, ok := supportedMimetypes[mimetype]; ok {
 				ctx.Set(types.ContextDataRenderMimetype, mimetype)
@@ -22,6 +23,16 @@ func AcceptMiddleware(supportedMimetypes map[string]any) gin.HandlerFunc {
 				return
 			}
 		}
+
+		// Websocket sub-protocol
+		if wsProtocol := ctx.GetHeader(types.SecWebsocketProtocol); wsProtocol != "" {
+			if _, ok := supportedMimetypes[wsProtocol]; ok {
+				ctx.Set(types.ContextDataRenderMimetype, wsProtocol)
+				ctx.Next()
+				return
+			}
+		}
+
 		problems.ProblemUnsupportedMediaType.Abort(ctx)
 	}
 }

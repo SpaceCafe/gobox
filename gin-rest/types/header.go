@@ -15,4 +15,7 @@ const (
 
 	// AcceptHeader is the HTTP header key for the Accept header.
 	AcceptHeader = "Accept"
+
+	// SecWebsocketProtocol is the HTTP header key for the Websocket sub-protocol.
+	SecWebsocketProtocol = "Sec-Websocket-Protocol"
 )
