@@ -66,35 +66,35 @@ type IModelUpdatable interface {
 
 // IModelCreateClause defines an interface for models that support create operations with custom clauses.
 type IModelCreateClause interface {
-	// CreateClause returns a GORM clause.Interface containing the query clause for creating records.
+	// CreateClause returns a GORM []clause.Interface containing the query clause for creating records.
 	// The clause can be used to customize the CREATE operation in the database.
-	CreateClause(ctx *gin.Context) clause.Interface
+	CreateClause(ctx *gin.Context) []clause.Interface
 }
 
 // IModelReadClause defines an interface for models that support read operations with custom clauses.
 type IModelReadClause interface {
-	// ReadClause returns a GORM clause.Interface containing the query clause for reading single records.
+	// ReadClause returns a GORM []clause.Interface containing the query clause for reading single records.
 	// The clause can be used to customize the READ operation in the database.
-	ReadClause(ctx *gin.Context) clause.Interface
+	ReadClause(ctx *gin.Context) []clause.Interface
 }
 
 // IModelListClause defines an interface for models that support list operations with custom clauses.
 type IModelListClause interface {
-	// ListClause returns a GORM clause.Interface containing the query clause for listing multiple records.
+	// ListClause returns a GORM []clause.Interface containing the query clause for listing multiple records.
 	// The clause can be used to customize the LIST operation in the database.
-	ListClause(ctx *gin.Context) clause.Interface
+	ListClause(ctx *gin.Context) []clause.Interface
 }
 
 // IModelUpdateClause defines an interface for models that support update operations with custom clauses.
 type IModelUpdateClause interface {
-	// UpdateClause returns a GORM clause.Interface containing the query clause for updating records.
+	// UpdateClause returns a GORM []clause.Interface containing the query clause for updating records.
 	// The clause can be used to customize the UPDATE operation in the database.
-	UpdateClause(ctx *gin.Context) clause.Interface
+	UpdateClause(ctx *gin.Context) []clause.Interface
 }
 
 // IModelDeleteClause defines an interface for models that support delete operations with custom clauses.
 type IModelDeleteClause interface {
-	// DeleteClause returns a GORM clause.Interface containing the query clause for deleting records.
+	// DeleteClause returns a GORM []clause.Interface containing the query clause for deleting records.
 	// The clause can be used to customize the DELETE operation in the database.
-	DeleteClause(ctx *gin.Context) clause.Interface
+	DeleteClause(ctx *gin.Context) []clause.Interface
 }

@@ -28,7 +28,7 @@ func (r *DatabaseService) SetResource(resource types.IResource) {
 func (r *DatabaseService) Create(ctx *gin.Context, entity any) (err error) {
 	stmt := r.Database().Statement
 	if entity, ok := entity.(types.IModelCreateClause); ok {
-		stmt.AddClause(entity.CreateClause(ctx))
+		AddClauses(stmt, entity.CreateClause(ctx))
 	}
 	return stmt.Create(entity).Error
 }
@@ -40,7 +40,7 @@ func (r *DatabaseService) Read(ctx *gin.Context, entity any) (err error) {
 		stmt.Select(entity.Readable(ctx))
 	}
 	if entity, ok := entity.(types.IModelReadClause); ok {
-		stmt.AddClause(entity.ReadClause(ctx))
+		AddClauses(stmt, entity.ReadClause(ctx))
 	}
 	return stmt.First(entity).Error
 }
@@ -60,7 +60,7 @@ func (r *DatabaseService) List(ctx *gin.Context, entities any) (err error) {
 		stmt.Select(entity.Readable(ctx))
 	}
 	if entity, ok := entity.(types.IModelListClause); ok {
-		stmt.AddClause(entity.ListClause(ctx))
+		AddClauses(stmt, entity.ListClause(ctx))
 	}
 
 	err = stmt.Count(&total).Error
@@ -82,7 +82,7 @@ func (r *DatabaseService) Update(ctx *gin.Context, entity any) (err error) {
 		stmt.Select(entity.Updatable(ctx))
 	}
 	if entity, ok := entity.(types.IModelUpdateClause); ok {
-		stmt.AddClause(entity.UpdateClause(ctx))
+		AddClauses(stmt, entity.UpdateClause(ctx))
 	}
 
 	result := stmt.Updates(entity)
@@ -96,7 +96,7 @@ func (r *DatabaseService) Update(ctx *gin.Context, entity any) (err error) {
 func (r *DatabaseService) Delete(ctx *gin.Context, entity any) (err error) {
 	stmt := r.Database().Model(entity).Statement
 	if entity, ok := entity.(types.IModelDeleteClause); ok {
-		stmt.AddClause(entity.DeleteClause(ctx))
+		AddClauses(stmt, entity.DeleteClause(ctx))
 	}
 	result := stmt.Delete(entity)
 	if result.Error == nil && result.RowsAffected == 0 {

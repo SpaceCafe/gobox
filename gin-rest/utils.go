@@ -3,6 +3,9 @@ package rest
 import (
 	"strings"
 	"unicode"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // CamelToSnake converts a camel case string to a snake case string.
@@ -22,4 +25,11 @@ func IsLetter(s string) bool {
 	return !strings.ContainsFunc(s, func(r rune) bool {
 		return !unicode.IsLetter(r)
 	})
+}
+
+// AddClauses adds multiple clauses to a GORM database statement.
+func AddClauses(stmt *gorm.Statement, clauses []clause.Interface) {
+	for i := range clauses {
+		stmt.AddClause(clauses[i])
+	}
 }
