@@ -38,7 +38,7 @@ func (r *BaseController[T]) Create() gin.HandlerFunc {
 func (r *BaseController[T]) Read() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var entity T
-		if BindID(ctx, &entity) || HandleError(ctx, r.Service().Read(ctx, &entity)) || BeforeRenderHook(ctx, &entity) {
+		if BindID(ctx, &entity) || AfterBindHook(ctx, &entity) || HandleError(ctx, r.Service().Read(ctx, &entity)) || BeforeRenderHook(ctx, &entity) {
 			return
 		}
 		ctx.Render(http.StatusOK, r.View().Read(ctx, &entity))
@@ -77,7 +77,7 @@ func (r *BaseController[T]) Update() gin.HandlerFunc {
 func (r *BaseController[T]) Delete() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var entity T
-		if BindID(ctx, &entity) || HandleError(ctx, r.Service().Delete(ctx, &entity)) {
+		if BindID(ctx, &entity) || AfterBindHook(ctx, &entity) || HandleError(ctx, r.Service().Delete(ctx, &entity)) {
 			return
 		}
 		ctx.Status(http.StatusNoContent)
