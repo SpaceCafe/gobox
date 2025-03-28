@@ -31,7 +31,7 @@ type Model struct {
 	UpdatedAt *null.Time `json:"updated_at,omitempty" yaml:"updated_at,omitempty" xml:"updated_at,omitempty" gorm:"autoUpdateTime" binding:"omitempty"`
 
 	// DeletedAt is a timestamp indicating when the Model was deleted, used for soft deletes.
-	DeletedAt *null.Time `json:"deleted_at,omitempty" yaml:"deleted_at,omitempty" xml:"deleted_at,omitempty" gorm:"index" binding:"omitempty"`
+	DeletedAt *types.DeletedAt `json:"deleted_at,omitempty" yaml:"deleted_at,omitempty" xml:"deleted_at,omitempty" gorm:"index" binding:"omitempty"`
 }
 
 // GetID returns the unique identifier of the model.
