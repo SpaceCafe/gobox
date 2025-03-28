@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/spacecafe/gobox/gin-rest/types"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -145,25 +144,25 @@ func GetListOptions(ctx *gin.Context) *ListOptions {
 	}
 }
 
-// Paginate applies pagination to the database query.
-func (r *ListOptions) Paginate(database *gorm.DB) (tx *gorm.DB) {
-	return database.Limit(r.PageSize).Offset((r.Page - 1) * r.PageSize)
+// Paginate returns a clause to paginate the database result.
+func (r *ListOptions) Paginate() clause.Interface {
+	return clause.Limit{Limit: &r.PageSize, Offset: (r.Page - 1) * r.PageSize}
 }
 
-// Sort applies sorting to the database query based on the provided sort options.
-func (r *ListOptions) Sort(database *gorm.DB) (tx *gorm.DB) {
-	tx = database
+// Sort returns a clause to sort the database result based on the provided sort options.
+func (r *ListOptions) Sort() clause.Interface {
+	columns := make([]clause.OrderByColumn, 0, len(*r.Sorts))
 	for i := range *r.Sorts {
-		tx = tx.Order(clause.OrderByColumn{
+		columns = append(columns, clause.OrderByColumn{
 			Column: clause.Column{Name: (*r.Sorts)[i].Field},
 			Desc:   (*r.Sorts)[i].Descending,
 		})
 	}
-	return
+	return clause.OrderBy{Columns: columns}
 }
 
-// Filter applies filtering to the database query based on the provided filter options.
-func (r *ListOptions) Filter(database *gorm.DB) (tx *gorm.DB) {
+// Filter returns a clause to filter the database result based on the provided filter options.
+func (r *ListOptions) Filter() clause.Interface {
 	expressions := make([]clause.Expression, 0, len(*r.Filters))
 	for i := range *r.Filters {
 		var expression clause.Expression
@@ -187,10 +186,5 @@ func (r *ListOptions) Filter(database *gorm.DB) (tx *gorm.DB) {
 		}
 		expressions = append(expressions, expression)
 	}
-	return database.Clauses(expressions...)
-}
-
-// Prepare applies pagination, sorting, and filtering to the database query.
-func (r *ListOptions) Prepare(database *gorm.DB) (tx *gorm.DB) {
-	return r.Filter(r.Sort(r.Paginate(database))).Session(&gorm.Session{})
+	return clause.Where{Exprs: expressions}
 }

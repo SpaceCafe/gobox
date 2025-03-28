@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spacecafe/gobox/gin-rest/types"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // Ensure DatabaseService implements IService interface.
@@ -26,43 +25,67 @@ func (r *DatabaseService) SetResource(resource types.IResource) {
 }
 
 // Create inserts a new entity into the database.
-func (r *DatabaseService) Create(_ *gin.Context, entity any) (err error) {
-	return r.Database().Create(entity).Error
+func (r *DatabaseService) Create(ctx *gin.Context, entity any) (err error) {
+	stmt := r.Database().Statement
+	if entity, ok := entity.(types.IModelCreateClause); ok {
+		stmt.AddClause(entity.CreateClause(ctx))
+	}
+	return stmt.Create(entity).Error
 }
 
 // Read retrieves an entity from the database based on provided context and entity type.
 func (r *DatabaseService) Read(ctx *gin.Context, entity any) (err error) {
-	tx := r.Database().Preload(clause.Associations)
+	stmt := r.Database().Statement
 	if entity, ok := entity.(types.IModelReadable); ok {
-		tx = tx.Select(entity.Readable(ctx))
+		stmt.Select(entity.Readable(ctx))
 	}
-	return tx.First(entity).Error
+	if entity, ok := entity.(types.IModelReadClause); ok {
+		stmt.AddClause(entity.ReadClause(ctx))
+	}
+	return stmt.First(entity).Error
 }
 
 // List retrieves a list of entities from the database based on provided context and entity type.
 func (r *DatabaseService) List(ctx *gin.Context, entities any) (err error) {
 	var total int64
+	entity := ModelFactory(entities)
+
 	options := GetListOptions(ctx)
-	err = options.Filter(r.Database()).Model(entities).Count(&total).Error
+	filter := options.Filter()
+
+	stmt := r.Database().Model(entities).Statement
+	stmt.AddClause(filter)
+
+	if entity, ok := entity.(types.IModelReadable); ok {
+		stmt.Select(entity.Readable(ctx))
+	}
+	if entity, ok := entity.(types.IModelListClause); ok {
+		stmt.AddClause(entity.ListClause(ctx))
+	}
+
+	err = stmt.Count(&total).Error
 	if err != nil {
 		return
 	}
 	ctx.Set(types.ContextDataTotal, int(total))
 
-	tx := options.Prepare(r.Database())
-	if entity, ok := ModelFactory(entities).(types.IModelReadable); ok {
-		tx = tx.Select(entity.Readable(ctx))
-	}
-	return tx.Preload(clause.Associations).Find(entities).Error
+	stmt.AddClause(options.Paginate())
+	stmt.AddClause(options.Sort())
+	return stmt.Find(entities).Error
 }
 
 // Update updates an existing entity in the database.
 func (r *DatabaseService) Update(ctx *gin.Context, entity any) (err error) {
-	tx := r.Database().Model(entity)
+	stmt := r.Database().Model(entity).Statement
+
 	if entity, ok := entity.(types.IModelUpdatable); ok {
-		tx = tx.Select(entity.Updatable(ctx))
+		stmt.Select(entity.Updatable(ctx))
 	}
-	result := tx.Updates(entity)
+	if entity, ok := entity.(types.IModelUpdateClause); ok {
+		stmt.AddClause(entity.UpdateClause(ctx))
+	}
+
+	result := stmt.Updates(entity)
 	if result.Error == nil && result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
@@ -70,8 +93,12 @@ func (r *DatabaseService) Update(ctx *gin.Context, entity any) (err error) {
 }
 
 // Delete removes an entity from the database.
-func (r *DatabaseService) Delete(_ *gin.Context, entity any) (err error) {
-	result := r.Database().Model(entity).Delete(entity)
+func (r *DatabaseService) Delete(ctx *gin.Context, entity any) (err error) {
+	stmt := r.Database().Model(entity).Statement
+	if entity, ok := entity.(types.IModelDeleteClause); ok {
+		stmt.AddClause(entity.DeleteClause(ctx))
+	}
+	result := stmt.Delete(entity)
 	if result.Error == nil && result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}

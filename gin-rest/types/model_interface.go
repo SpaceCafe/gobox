@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm/clause"
 )
 
 // IModel defines the basic methods that a model should implement to interact with its ID.
@@ -61,4 +62,39 @@ type IModelReadable interface {
 type IModelUpdatable interface {
 	// Updatable returns a slice of field names that are allowed to be updated in the model.
 	Updatable(ctx *gin.Context) []string
+}
+
+// IModelCreateClause defines an interface for models that support create operations with custom clauses.
+type IModelCreateClause interface {
+	// CreateClause returns a GORM clause.Interface containing the query clause for creating records.
+	// The clause can be used to customize the CREATE operation in the database.
+	CreateClause(ctx *gin.Context) clause.Interface
+}
+
+// IModelReadClause defines an interface for models that support read operations with custom clauses.
+type IModelReadClause interface {
+	// ReadClause returns a GORM clause.Interface containing the query clause for reading single records.
+	// The clause can be used to customize the READ operation in the database.
+	ReadClause(ctx *gin.Context) clause.Interface
+}
+
+// IModelListClause defines an interface for models that support list operations with custom clauses.
+type IModelListClause interface {
+	// ListClause returns a GORM clause.Interface containing the query clause for listing multiple records.
+	// The clause can be used to customize the LIST operation in the database.
+	ListClause(ctx *gin.Context) clause.Interface
+}
+
+// IModelUpdateClause defines an interface for models that support update operations with custom clauses.
+type IModelUpdateClause interface {
+	// UpdateClause returns a GORM clause.Interface containing the query clause for updating records.
+	// The clause can be used to customize the UPDATE operation in the database.
+	UpdateClause(ctx *gin.Context) clause.Interface
+}
+
+// IModelDeleteClause defines an interface for models that support delete operations with custom clauses.
+type IModelDeleteClause interface {
+	// DeleteClause returns a GORM clause.Interface containing the query clause for deleting records.
+	// The clause can be used to customize the DELETE operation in the database.
+	DeleteClause(ctx *gin.Context) clause.Interface
 }
