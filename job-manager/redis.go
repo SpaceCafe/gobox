@@ -66,7 +66,7 @@ type RedisJobManager[T any] struct {
 	// ready indicates whether the job manager is ready to process jobs.
 	ready bool
 
-	// hasJobHooks indicates whether the job type implements IJobHooks interface.
+	// hasJobHooks indicates whether the job type implements IJobOnCompletionHook interface.
 	hasJobHooks bool
 }
 
@@ -84,7 +84,7 @@ func NewRedisJobManager[T any](config *Config) (jobManager *RedisJobManager[T], 
 		hasJobHooks:         false,
 	}
 	jobManager.readyCond = sync.NewCond(&jobManager.readyMutex)
-	if _, ok := any((*T)(nil)).(IJobHooks); ok {
+	if _, ok := any((*T)(nil)).(IJobOnCompletionHook); ok {
 		jobManager.hasJobHooks = true
 	}
 	return
@@ -210,7 +210,12 @@ func (r *RedisJobManager[T]) GetJob(jobID string, entity IJob) (err error) {
 		r.config.Logger.Warnf("failed to get job '%s': %v", jobID, err)
 		return
 	}
-	return json.Unmarshal([]byte(jobString), entity)
+	err = json.Unmarshal([]byte(jobString), entity)
+	if err != nil {
+		return
+	}
+	OnCreationHook(r.hookContext, entity)
+	return
 }
 
 // GetJobProgress retrieves the current state and progress of a job identified by jobID.
@@ -418,13 +423,13 @@ func (r *RedisJobManager[T]) watchCompletedJobsQueue() {
 			//nolint:mnd // Redis returns nil or an array of size 2.
 			if len(response) == 2 {
 				var entity T
-				entityRef := any(&entity).(IJobHooks)
+				entityRef := any(&entity).(IJob)
 				err = r.GetJob(response[1], entityRef)
 				if err != nil {
 					r.config.Logger.Warnf("failed to initiate post-processing tasks for job '%s': %v", response[1], err)
 					continue
 				}
-				entityRef.OnCompletion(r.hookContext)
+				OnCompletionHook(r.hookContext, entityRef)
 			}
 		}
 	}
@@ -433,7 +438,7 @@ func (r *RedisJobManager[T]) watchCompletedJobsQueue() {
 // processJob handles the execution of a specific job.
 func (r *RedisJobManager[T]) processJob(jobID string) {
 	var entity T
-	entityPtr := any(&entity).(IJob)
+	entityRef := any(&entity).(IJob)
 	r.config.Logger.Infof("processing job '%s'", jobID)
 
 	defer func() {
@@ -445,20 +450,20 @@ func (r *RedisJobManager[T]) processJob(jobID string) {
 	}()
 
 	r.SetJobProgress(jobID, StateRunning, 0)
-	err := r.GetJob(jobID, entityPtr)
+	err := r.GetJob(jobID, entityRef)
 	if err != nil {
 		r.SetJobProgress(jobID, StateFailed, 0)
 		return
 	}
 
-	err = entityPtr.Start()
+	err = entityRef.Start()
 	if err != nil {
 		r.config.Logger.Warnf("failed to start job '%s': %v", jobID, err)
 		r.SetJobProgress(jobID, StateFailed, 0)
 		return
 	}
 
-	if err = r.SetJob(jobID, entityPtr); err != nil {
+	if err = r.SetJob(jobID, entityRef); err != nil {
 		r.SetJobProgress(jobID, StateFailed, 0)
 		return
 	}

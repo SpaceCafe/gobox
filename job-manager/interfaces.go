@@ -72,13 +72,21 @@ type IJob interface {
 	Start() error
 }
 
-// IJobHooks extends the IJob interface with optional hooks, processed by the job manager after completion.
-type IJobHooks interface {
+// IJobOnCompletionHook extends the IJob interface with optional OnCompletion hook.
+type IJobOnCompletionHook interface {
 	IJob
 	// OnCompletion is a hook called by the JobManager when the job is completed.
 	// This method can be used for any post-processing tasks, such as cleanup, logging,
 	// notifying other systems, or persisting job results into a database.
 	OnCompletion(ctx IJobHookContext)
+}
+
+// IJobOnCreationHook extends the IJob interface with optional OnCreation hook.
+type IJobOnCreationHook interface {
+	IJob
+	// OnCreation is a hook called by the JobManager when a job is created.
+	// This method can be used as a factory method to prepare the struct.
+	OnCreation(ctx IJobHookContext)
 }
 
 // IJobHookContext provides an interface for accessing and modifying context information related to job hooks.
