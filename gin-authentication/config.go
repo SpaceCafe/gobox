@@ -32,7 +32,7 @@ type Config struct {
 
 	// HeaderValuePrefix is a prefix that will be added to the API key in the header.
 	// This can be used to provide additional context or information about how the API key was obtained,
-	// such as "Bearer ", which is commonly used in HTTP authentication.
+	// such as "Bearer", which is commonly used in HTTP authentication.
 	HeaderValuePrefix string `json:"header_value_prefix" yaml:"header_value_prefix" mapstructure:"header_value_prefix"`
 
 	// Users is a map where keys are usernames and values are passwords. It's used for basic HTTP authentication.
