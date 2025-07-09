@@ -47,7 +47,8 @@ func New(config *Config) gin.HandlerFunc {
 
 		// Compare the provided password with server's configured API key using constant time comparison to prevent timing attacks.
 		// If password matches, continue handling original request as user is authenticated.
-		if password != "" {
+		if password, ok := strings.CutPrefix(password, config.HeaderValuePrefix); ok {
+			password = strings.TrimSpace(password)
 			for i := range config.APIKeys {
 				if ComparePasswords([]byte(config.APIKeys[i]), []byte(password)) {
 					authenticated = true
