@@ -80,20 +80,30 @@ func (r *Item) Marshal() ([]byte, error) {
 // String returns a string representation of the log item in the format "[LEVEL] [DATE] [FILE]:[LINE]: MESSAGE".
 // The level is colored based on its value.
 func (r *Item) String() string {
-	buf := "[" + prefix[r.level] + "]"
-	for i := 0; i <= prefixMaxLen-len(prefix[r.level]); i++ {
-		buf += " "
+	var (
+		builder strings.Builder
+	)
+	builder.WriteRune('[')
+	builder.WriteString(prefix[r.level])
+	builder.WriteRune(']')
+	for i := 0; i <= prefixMaxLen-len(LevelToString[r.level]); i++ {
+		builder.WriteRune(' ')
 	}
-	buf += r.Date.Format(dateFormat) + " " + r.File + ":" + strconv.Itoa(r.Line) + ": "
+	builder.WriteString(r.Date.Format(dateFormat))
+	builder.WriteRune(' ')
+	builder.WriteString(r.File)
+	builder.WriteRune(':')
+	builder.WriteString(strconv.Itoa(r.Line))
+	builder.WriteString(": ")
 
 	switch msg := r.Message.(type) {
 	case nil:
 		break
 	case string:
-		buf += msg
+		builder.WriteString(msg)
 	default:
-		buf += fmt.Sprintf("%v", msg)
+		builder.WriteString(fmt.Sprintf("%v", msg))
 	}
 
-	return buf
+	return builder.String()
 }
