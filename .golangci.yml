@@ -1,92 +1,102 @@
-linters-settings:
-  depguard:
-    rules:
-      main:
-        list-mode: strict
-        files:
-          - $all
-          - "!$test"
-        allow:
-          - $gostd
-          - github.com/fatih/color
-          - github.com/gertd/go-pluralize
-          - github.com/gin-gonic/gin
-          - github.com/golang-jwt/jwt/v5
-          - github.com/go-playground/validator/v10
-          - github.com/spacecafe
-          - github.com/google/uuid
-          - github.com/mattn/go-sqlite3
-          - github.com/jackc/pgx/v5/pgconn
-          - github.com/aws/smithy-go
-          - github.com/redis/go-redis/v9
-      tests:
-        list-mode: strict
-        files:
-          - "$test"
-        allow:
-          - $gostd
-          - github.com/DATA-DOG/go-sqlmock
-          - github.com/gin-gonic/gin
-          - github.com/golang-jwt/jwt/v5
-          - github.com/spacecafe
-          - github.com/stretchr/testify
-          - github.com/go-playground/validator/v10
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - style
-      - performance
-      - experimental
-      - opinionated
-  gocyclo:
-    min-complexity: 10
-  gofmt:
-    rewrite-rules:
-      - pattern: 'interface{}'
-        replacement: 'any'
-      - pattern: 'a[b:len(a)]'
-        replacement: 'a[b:]'
-
+version: "2"
 linters:
   enable:
     - bodyclose
+    - copyloopvar
     - depguard
     - dogsled
     - dupl
-    - errcheck
     - errorlint
-    - copyloopvar
     - funlen
     - gocheckcompilerdirectives
     - gochecknoglobals
     - gochecknoinits
     - goconst
     - gocritic
-    - gocyclo
     - godot
     - godox
-    - gofmt
-    - goimports
     - goprintffuncname
     - gosec
-    - gosimple
-    - govet
-    - ineffassign
     - misspell
     - mnd
     - nakedret
     - noctx
     - nolintlint
-    - revive
     - staticcheck
-    - stylecheck
-    - typecheck
     - unconvert
     - unparam
-    - unused
-
-issues:
-  exclude-rules:
-    - path: _test.go
-      linters:
-        - funlen
+  settings:
+    depguard:
+      rules:
+        main:
+          list-mode: strict
+          files:
+            - $all
+            - '!$test'
+          allow:
+            - $gostd
+            - github.com/fatih/color
+            - github.com/gertd/go-pluralize
+            - github.com/gin-gonic/gin
+            - github.com/golang-jwt/jwt/v5
+            - github.com/go-playground/validator/v10
+            - github.com/spacecafe
+            - github.com/google/uuid
+            - github.com/mattn/go-sqlite3
+            - github.com/jackc/pgx/v5/pgconn
+            - github.com/aws/smithy-go
+            - github.com/redis/go-redis/v9
+            - gopkg.in/yaml.v3
+        tests:
+          list-mode: strict
+          files:
+            - $test
+          allow:
+            - $gostd
+            - github.com/DATA-DOG/go-sqlmock
+            - github.com/gin-gonic/gin
+            - github.com/golang-jwt/jwt/v5
+            - github.com/spacecafe
+            - github.com/stretchr/testify
+            - github.com/go-playground/validator/v10
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+        - experimental
+        - opinionated
+    gocyclo:
+      min-complexity: 10
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - funlen
+        path: _test.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      rewrite-rules:
+        - pattern: interface{}
+          replacement: any
+        - pattern: a[b:len(a)]
+          replacement: a[b:]
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
