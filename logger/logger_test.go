@@ -139,16 +139,16 @@ func TestLogger(t *testing.T) {
 
 func TestLogger_SetOutput(t *testing.T) {
 	defer func() {
-		_ = os.Truncate("testdata/test.log", 0)
-		_ = os.Remove("testdata/new_test.log")
+		_ = os.Truncate("test/test.log", 0)
+		_ = os.Remove("test/new_test.log")
 	}()
 
 	tests := []struct {
 		name     string
 		filename string
 	}{
-		{"append file", "testdata/test.log"},
-		{"create file", "testdata/new_test.log"},
+		{"append file", "test/test.log"},
+		{"create file", "test/new_test.log"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -42,28 +43,32 @@ type Logger struct {
 	output  func(*types.Entry, int)
 }
 
-// New creates a new Logger instance with default configuration settings.
-func New() *Logger {
-	var config = &types.Config{}
-	config.SetDefaults()
-	return WithConfig(config)
-}
-
-// WithConfig initializes a new Logger with the provided configuration.
-// It sets the logger's application name to the basename of the executable.
-// If any errors occur during configuration, it panics.
-func WithConfig(config *types.Config) *Logger {
-	executable, err := os.Executable()
-	if err != nil {
-		executable = "-"
-	}
-
+// New creates and returns a new Logger instance, configuring it with optional arguments such as Config or Metadata.
+func New(args ...any) *Logger {
 	l := &Logger{
-		appName: path.Base(executable),
+		appName: filepath.Base(os.Args[0]),
 		logger:  log.New(os.Stderr, "", 0),
 	}
 
-	err = l.SetLevel(config.Level)
+	var config *types.Config
+
+	for _, arg := range args {
+		switch typedArg := arg.(type) {
+		case types.Config:
+			config = &typedArg
+		case *types.Config:
+			config = typedArg
+		case types.WithAppName:
+			l.appName = string(typedArg)
+		}
+	}
+
+	if config == nil {
+		config = &types.Config{}
+		config.SetDefaults()
+	}
+
+	err := l.SetLevel(config.Level)
 	if err != nil {
 		panic(err)
 	}
