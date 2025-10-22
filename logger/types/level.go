@@ -1,4 +1,8 @@
-package logger
+package types
+
+import (
+	"errors"
+)
 
 type Level int
 
@@ -37,9 +41,39 @@ const (
 )
 
 var (
+	ErrInvalidLevel = errors.New("log level is invalid")
+
 	// LevelToString is a map that converts a Level to its string representation.
 	LevelToString = map[Level]string{DebugLevel: "debug", InfoLevel: "info", WarningLevel: "warning", ErrorLevel: "error", FatalLevel: "fatal"}
+
+	// LevelToSyslog maps log levels to their corresponding syslog severity values.
+	LevelToSyslog = map[Level]int{DebugLevel: 7, InfoLevel: 6, WarningLevel: 4, ErrorLevel: 3, FatalLevel: 2}
 
 	// StringToLevel is a map that converts a string to its Level equivalent.
 	StringToLevel = map[string]Level{"debug": DebugLevel, "info": InfoLevel, "warning": WarningLevel, "error": ErrorLevel, "fatal": FatalLevel}
 )
+
+func (r *Level) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + LevelToString[*r] + `"`), nil
+}
+
+func (r *Level) String() string {
+	return LevelToString[*r]
+}
+
+func (r *Level) UnmarshalJSON(data []byte) (err error) {
+	*r, err = ParseLevel(string(data))
+	return
+}
+
+func (r *Level) UnmarshalText(text []byte) (err error) {
+	*r, err = ParseLevel(string(text))
+	return
+}
+
+func ParseLevel(level string) (Level, error) {
+	if v, ok := StringToLevel[level]; ok {
+		return v, nil
+	}
+	return DebugLevel, ErrInvalidLevel
+}

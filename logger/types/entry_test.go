@@ -1,4 +1,4 @@
-package logger
+package types
 
 import (
 	"strconv"
@@ -52,7 +52,7 @@ func TestItem_Marshal(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &Item{
+			r := &Entry{
 				Date:    tt.fields.Date,
 				File:    tt.fields.File,
 				Level:   tt.fields.Level,
@@ -104,7 +104,7 @@ func TestItem_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &Item{
+			r := &Entry{
 				Date:    tt.fields.Date,
 				File:    tt.fields.File,
 				Message: tt.fields.Message,
@@ -136,7 +136,7 @@ func TestNewItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewItem(tt.args.level, tt.args.file, tt.args.line, tt.args.message)
+			got := NewEntry(tt.args.level, tt.args.file, tt.args.line, tt.args.message)
 			assert.NotNil(t, got.Date)
 			assert.Equal(t, tt.args.file, got.File)
 			assert.Equal(t, tt.want, got.Level)

@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	problems "github.com/spacecafe/gobox/gin-problems"
-	"github.com/spacecafe/gobox/logger"
+	"github.com/spacecafe/gobox/logger/types"
 )
 
 var (
@@ -49,7 +49,7 @@ func NewHTTPServer(config *Config) *HTTPServer {
 			ReadHeaderTimeout: config.ReadHeaderTimeout,
 		},
 	} // Set mode of gin dependent on logging level.
-	if config.Logger.GetLevel() == logger.DebugLevel {
+	if config.Logger.Level() == types.DebugLevel {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)

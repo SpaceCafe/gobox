@@ -5,13 +5,14 @@ import (
 	"os"
 	"testing"
 
+	"github.com/spacecafe/gobox/logger/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLogger(t *testing.T) {
 	type args struct {
-		level  Level
-		format Format
+		level  types.Level
+		format types.Format
 	}
 	type wants struct {
 		errLevel  error
@@ -22,13 +23,13 @@ func TestLogger(t *testing.T) {
 		args  args
 		wants wants
 	}{
-		{"Debug", args{DebugLevel, PlainFormat}, wants{}},
-		{"Info", args{InfoLevel, JSONFormat}, wants{}},
-		{"Warning", args{WarningLevel, PlainFormat}, wants{}},
-		{"Error", args{ErrorLevel, JSONFormat}, wants{}},
-		{"Fatal", args{FatalLevel, PlainFormat}, wants{}},
-		{"invalid level", args{99, PlainFormat}, wants{errLevel: ErrInvalidLevel}},
-		{"invalid format", args{FatalLevel, 99}, wants{errFormat: ErrInvalidFormat}},
+		{"Debug", args{types.DebugLevel, types.PlainFormat}, wants{}},
+		{"Info", args{types.InfoLevel, types.JSONFormat}, wants{}},
+		{"Warning", args{types.WarningLevel, types.PlainFormat}, wants{}},
+		{"Error", args{types.ErrorLevel, types.JSONFormat}, wants{}},
+		{"Fatal", args{types.FatalLevel, types.PlainFormat}, wants{}},
+		{"invalid level", args{99, types.PlainFormat}, wants{errLevel: types.ErrInvalidLevel}},
+		{"invalid format", args{types.FatalLevel, 99}, wants{errFormat: types.ErrInvalidFormat}},
 	}
 
 	for _, tt := range tests {
@@ -52,7 +53,7 @@ func TestLogger(t *testing.T) {
 
 			// Test Debug/Debugf
 			l.Debug("test message")
-			if tt.args.level <= DebugLevel {
+			if tt.args.level <= types.DebugLevel {
 				assert.NotEmpty(t, buf.String())
 			} else {
 				assert.Empty(t, buf.String())
@@ -60,7 +61,7 @@ func TestLogger(t *testing.T) {
 			buf.Reset()
 
 			l.Debugf("%s", "test message")
-			if tt.args.level <= DebugLevel {
+			if tt.args.level <= types.DebugLevel {
 				assert.NotEmpty(t, buf.String())
 			} else {
 				assert.Empty(t, buf.String())
@@ -69,7 +70,7 @@ func TestLogger(t *testing.T) {
 
 			// Test Info/Infof
 			l.Info("test message")
-			if tt.args.level <= InfoLevel {
+			if tt.args.level <= types.InfoLevel {
 				assert.NotEmpty(t, buf.String())
 			} else {
 				assert.Empty(t, buf.String())
@@ -77,7 +78,7 @@ func TestLogger(t *testing.T) {
 			buf.Reset()
 
 			l.Infof("%s", "test message")
-			if tt.args.level <= InfoLevel {
+			if tt.args.level <= types.InfoLevel {
 				assert.NotEmpty(t, buf.String())
 			} else {
 				assert.Empty(t, buf.String())
@@ -86,7 +87,7 @@ func TestLogger(t *testing.T) {
 
 			// Test Warning/Warningf
 			l.Warning("test message")
-			if tt.args.level <= WarningLevel {
+			if tt.args.level <= types.WarningLevel {
 				assert.NotEmpty(t, buf.String())
 			} else {
 				assert.Empty(t, buf.String())
@@ -94,7 +95,7 @@ func TestLogger(t *testing.T) {
 			buf.Reset()
 
 			l.Warningf("%s", "test message")
-			if tt.args.level <= WarningLevel {
+			if tt.args.level <= types.WarningLevel {
 				assert.NotEmpty(t, buf.String())
 			} else {
 				assert.Empty(t, buf.String())
@@ -103,7 +104,7 @@ func TestLogger(t *testing.T) {
 
 			// Test Error/Errorf
 			l.Error("test message")
-			if tt.args.level <= ErrorLevel {
+			if tt.args.level <= types.ErrorLevel {
 				assert.NotEmpty(t, buf.String())
 			} else {
 				assert.Empty(t, buf.String())
@@ -111,7 +112,7 @@ func TestLogger(t *testing.T) {
 			buf.Reset()
 
 			l.Errorf("%s", "test message")
-			if tt.args.level <= ErrorLevel {
+			if tt.args.level <= types.ErrorLevel {
 				assert.NotEmpty(t, buf.String())
 			} else {
 				assert.Empty(t, buf.String())
