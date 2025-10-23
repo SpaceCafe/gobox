@@ -7,20 +7,26 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	"github.com/spacecafe/gobox/config/types"
 )
 
 type envDecoder struct {
-	ctx      *types.ConfigContext
-	mappings []types.FieldMapping
+	cfg      *Config
+	mappings []fieldMapping
+}
+
+// fieldMapping represents a mapping between YAML path and struct field.
+type fieldMapping struct {
+	EnvName   string
+	EnvAlias  string
+	FieldPath []int
+	FieldType reflect.Type
 }
 
 // LoadFromEnv populates a configuration struct using environment variables based on field mappings and provided context.
-func LoadFromEnv(ctx *types.ConfigContext, config types.Configure) error {
+func LoadFromEnv(cfg *Config, config Configure) error {
 	decoder := envDecoder{
-		ctx:      ctx,
-		mappings: []types.FieldMapping{},
+		cfg:      cfg,
+		mappings: []fieldMapping{},
 	}
 	rootValue := reflect.ValueOf(config).Elem()
 	decoder.extractFieldMappings(rootValue.Type(), []string{}, []int{})
@@ -71,9 +77,9 @@ func (r *envDecoder) extractFieldMappings(t reflect.Type, yamlPath []string, fie
 		if fieldType.Kind() == reflect.Struct {
 			r.extractFieldMappings(fieldType, currentYAMLPath, currentFieldPath)
 		} else {
-			r.mappings = append(r.mappings, types.FieldMapping{
+			r.mappings = append(r.mappings, fieldMapping{
 				EnvName:   r.yamlPathToEnvName(currentYAMLPath),
-				EnvAlias:  strings.ToUpper(r.ctx.EnvAliases[strings.Join(currentYAMLPath, ".")]),
+				EnvAlias:  strings.ToUpper(r.cfg.EnvAliases[strings.Join(currentYAMLPath, ".")]),
 				FieldPath: currentFieldPath,
 				FieldType: field.Type,
 			})
@@ -85,8 +91,8 @@ func (r *envDecoder) extractFieldMappings(t reflect.Type, yamlPath []string, fie
 // e.g., "log.level" -> "LOG_LEVEL" or "APP_LOG_LEVEL" (with prefix).
 func (r *envDecoder) yamlPathToEnvName(yamlPath []string) string {
 	envName := strings.ToUpper(strings.Join(yamlPath, "_"))
-	if r.ctx.EnvPrefix != "" {
-		return r.ctx.EnvPrefix + "_" + envName
+	if r.cfg.EnvPrefix != "" {
+		return r.cfg.EnvPrefix + "_" + envName
 	}
 	return envName
 }
@@ -97,11 +103,11 @@ func (r *envDecoder) getEnvValue(envName string) (string, bool) {
 		return value, true
 	}
 
-	if r.ctx.WithEnvFileLoading {
+	if r.cfg.EnvFileLoading {
 		if filePath, ok := os.LookupEnv(envName + "_FILE"); ok {
 			content, err := os.ReadFile(filepath.Clean(filePath))
 			if err != nil {
-				r.ctx.Log.Warn(err)
+				r.cfg.Logger.Warn(err)
 				return "", false
 			}
 			return strings.TrimSpace(string(content)), true
@@ -112,7 +118,7 @@ func (r *envDecoder) getEnvValue(envName string) (string, bool) {
 }
 
 // setFieldValue sets a value on a nested field using reflection.
-func (r *envDecoder) setFieldValue(rootValue reflect.Value, mapping types.FieldMapping, value string) error {
+func (r *envDecoder) setFieldValue(rootValue reflect.Value, mapping fieldMapping, value string) error {
 	fieldValue := rootValue
 	for _, idx := range mapping.FieldPath {
 		fieldValue = fieldValue.Field(idx)
@@ -126,7 +132,7 @@ func (r *envDecoder) setFieldValue(rootValue reflect.Value, mapping types.FieldM
 	}
 
 	if !fieldValue.CanSet() {
-		return types.ErrFieldNotSettable
+		return ErrFieldNotSettable
 	}
 
 	return r.setConvertedValue(fieldValue, mapping.FieldType, value)

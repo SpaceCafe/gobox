@@ -5,19 +5,24 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spacecafe/gobox/config/types"
 	"gopkg.in/yaml.v3"
 )
 
-// LoadFromYAML loads configuration data from a YAML byte slice into a Configure object using a ConfigContext.
-func LoadFromYAML(ctx *types.ConfigContext, config types.Configure, data []byte) (err error) {
+type yamlDecoder struct {
+	cfg *Config
+}
+
+// LoadFromYAML loads configuration data from a YAML byte slice into a Configure object using a Config.
+func LoadFromYAML(cfg *Config, config Configure, data []byte) (err error) {
 	var node yaml.Node
+	decoder := yamlDecoder{cfg: cfg}
+
 	if err = yaml.Unmarshal(data, &node); err != nil {
 		return
 	}
 
-	if ctx.WithYAMLFileLoading {
-		if err = processYAMLNode(ctx, &node); err != nil {
+	if cfg.YAMLFileLoading {
+		if err = decoder.processYAMLNode(&node); err != nil {
 			return
 		}
 	}
@@ -26,16 +31,16 @@ func LoadFromYAML(ctx *types.ConfigContext, config types.Configure, data []byte)
 }
 
 // processYAMLNode recursively processes a YAML node for file loading and nested content handling based on the context.
-func processYAMLNode(ctx *types.ConfigContext, node *yaml.Node) (err error) {
-	if ctx.WithYAMLFileLoading {
-		err = processYAMLFileLoading(node)
+func (r *yamlDecoder) processYAMLNode(node *yaml.Node) (err error) {
+	if r.cfg.YAMLFileLoading {
+		err = r.processYAMLFileLoading(node)
 		if err != nil {
 			return
 		}
 	}
 
 	for _, child := range node.Content {
-		err = processYAMLNode(ctx, child)
+		err = r.processYAMLNode(child)
 		if err != nil {
 			return err
 		}
@@ -45,7 +50,7 @@ func processYAMLNode(ctx *types.ConfigContext, node *yaml.Node) (err error) {
 }
 
 // processYAMLFileLoading processes a YAML node, replaces scalar file references with file contents if tagged as `!file`.
-func processYAMLFileLoading(node *yaml.Node) error {
+func (*yamlDecoder) processYAMLFileLoading(node *yaml.Node) error {
 	if node.Kind == yaml.ScalarNode && node.Tag == "!file" {
 		filePath := strings.TrimSpace(node.Value)
 		content, err := os.ReadFile(filepath.Clean(filePath))

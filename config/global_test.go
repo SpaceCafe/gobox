@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/spacecafe/gobox/config/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,19 +30,18 @@ func (r *mockConfig) Validate() error { return nil }
 func TestLoadConfig(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      types.Configure
-		args        []any
+		config      Configure
+		opts        []Option
 		wantErr     bool
-		verify      func(t *testing.T, config types.Configure)
+		verify      func(t *testing.T, config Configure)
 		setupFunc   func(t *testing.T) string
 		cleanupFunc func(t *testing.T)
 	}{
 		{
 			name:    "valid config",
 			config:  &mockConfig{},
-			args:    []any{},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "yaml.example.com", tc.Host)
 				assert.Equal(t, 7000, tc.Port)
@@ -64,7 +62,6 @@ toggle: true
 		{
 			name:    "config file not found",
 			config:  &mockConfig{},
-			args:    []any{},
 			wantErr: true,
 			setupFunc: func(_ *testing.T) string {
 				return "/non/existent/path/config.yaml"
@@ -73,7 +70,6 @@ toggle: true
 		{
 			name:    "invalid yaml format",
 			config:  &mockConfig{},
-			args:    []any{},
 			wantErr: true,
 			setupFunc: func(t *testing.T) string {
 				tmpDir := t.TempDir()
@@ -90,9 +86,8 @@ toggle: [invalid
 		{
 			name:    "empty config file",
 			config:  &mockConfig{},
-			args:    []any{},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "127.0.0.1", tc.Host)
 				assert.Equal(t, 8080, tc.Port)
@@ -109,9 +104,8 @@ toggle: [invalid
 		{
 			name:    "partial config uses defaults",
 			config:  &mockConfig{},
-			args:    []any{},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "partial.example.com", tc.Host)
 				assert.Equal(t, 8080, tc.Port)
@@ -130,9 +124,8 @@ toggle: [invalid
 		{
 			name:    "config with extra fields",
 			config:  &mockConfig{},
-			args:    []any{},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "extra.example.com", tc.Host)
 				assert.Equal(t, 9000, tc.Port)
@@ -153,9 +146,8 @@ extra_field: this_should_be_ignored
 		{
 			name:    "no config flag provided",
 			config:  &mockConfig{},
-			args:    []any{},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				// Should use defaults when no config file is specified
 				assert.Equal(t, "127.0.0.1", tc.Host)
@@ -168,9 +160,8 @@ extra_field: this_should_be_ignored
 		{
 			name:    "config with zero values",
 			config:  &mockConfig{},
-			args:    []any{},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "", tc.Host)
 				assert.Equal(t, 0, tc.Port)
@@ -191,9 +182,8 @@ toggle: false
 		{
 			name:    "config with special characters",
 			config:  &mockConfig{},
-			args:    []any{},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "special-chars_123.example.com", tc.Host)
 				assert.Equal(t, 8888, tc.Port)
@@ -213,9 +203,8 @@ toggle: true
 		{
 			name:    "config file with comments",
 			config:  &mockConfig{},
-			args:    []any{},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "commented.example.com", tc.Host)
 				assert.Equal(t, 5555, tc.Port)
@@ -238,32 +227,31 @@ toggle: true # inline comment
 		{
 			name:    "environment variable",
 			config:  &mockConfig{},
-			args:    []any{},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "env.example.com", tc.Host)
 				assert.Equal(t, 5555, tc.Port)
 				assert.True(t, tc.Toggle)
 			},
 			setupFunc: func(_ *testing.T) string {
-				os.Setenv("HOST", "env.example.com")
-				os.Setenv("PORT", "5555")
-				os.Setenv("TOGGLE", "true")
+				_ = os.Setenv("HOST", "env.example.com")
+				_ = os.Setenv("PORT", "5555")
+				_ = os.Setenv("TOGGLE", "true")
 				return ""
 			},
 			cleanupFunc: func(_ *testing.T) {
-				os.Unsetenv("HOST")
-				os.Unsetenv("PORT")
-				os.Unsetenv("TOGGLE")
+				_ = os.Unsetenv("HOST")
+				_ = os.Unsetenv("PORT")
+				_ = os.Unsetenv("TOGGLE")
 			},
 		},
 		{
 			name:    "config file with file reference",
 			config:  &mockConfig{},
-			args:    []any{types.WithYAMLFileLoading{}},
+			opts:    []Option{WithYAMLFileLoading()},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "ref.example.com", tc.Host)
 				assert.Equal(t, 5555, tc.Port)
@@ -271,11 +259,14 @@ toggle: true # inline comment
 			},
 			setupFunc: func(t *testing.T) string {
 				tmpDir := t.TempDir()
-				yamlContent := `host: !file test/testdata.txt
+				refFile := filepath.Join(tmpDir, "testdata.txt")
+				yamlContent := `host: !file ` + refFile + `
 port: 5555
 `
 				configFile := filepath.Join(tmpDir, "config.yaml")
 				err := os.WriteFile(configFile, []byte(yamlContent), 0o600)
+				require.NoError(t, err)
+				err = os.WriteFile(refFile, []byte("ref.example.com"), 0o600)
 				require.NoError(t, err)
 				return configFile
 			},
@@ -283,9 +274,9 @@ port: 5555
 		{
 			name:    "config file with env expansion",
 			config:  &mockConfig{},
-			args:    []any{types.WithYAMLEnvExpansion{}},
+			opts:    []Option{WithYAMLEnvExpansion()},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "env.example.com", tc.Host)
 				assert.Equal(t, 5555, tc.Port)
@@ -299,21 +290,21 @@ port: $PORT
 				configFile := filepath.Join(tmpDir, "config.yaml")
 				err := os.WriteFile(configFile, []byte(yamlContent), 0o600)
 				require.NoError(t, err)
-				os.Setenv("HOST", "env.example.com")
-				os.Setenv("PORT", "5555")
+				_ = os.Setenv("HOST", "env.example.com")
+				_ = os.Setenv("PORT", "5555")
 				return configFile
 			},
 			cleanupFunc: func(_ *testing.T) {
-				os.Unsetenv("HOST")
-				os.Unsetenv("PORT")
+				_ = os.Unsetenv("HOST")
+				_ = os.Unsetenv("PORT")
 			},
 		},
 		{
 			name:    "config file and env",
 			config:  &mockConfig{},
-			args:    []any{types.WithEnvPrefix("APP")},
+			opts:    []Option{WithEnvPrefix("APP")},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "env.example.com", tc.Host)
 				assert.Equal(t, 5555, tc.Port)
@@ -327,79 +318,99 @@ port: 5555
 				configFile := filepath.Join(tmpDir, "config.yaml")
 				err := os.WriteFile(configFile, []byte(yamlContent), 0o600)
 				require.NoError(t, err)
-				os.Setenv("APP_HOST", "env.example.com")
+				_ = os.Setenv("APP_HOST", "env.example.com")
 				return configFile
 			},
 			cleanupFunc: func(_ *testing.T) {
-				os.Unsetenv("APP_HOST")
+				_ = os.Unsetenv("APP_HOST")
 			},
 		},
 		{
 			name:    "env with prefix and nested",
 			config:  &mockConfig{},
-			args:    []any{types.WithEnvPrefix("APP")},
+			opts:    []Option{WithEnvPrefix("APP")},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "Jane", tc.Name.First)
 				assert.Equal(t, "Doe", tc.Name.Last)
 			},
 			setupFunc: func(_ *testing.T) string {
-				os.Setenv("APP_NAME_FIRST", "Jane")
-				os.Setenv("APP_NAME_LAST", "Doe")
+				_ = os.Setenv("APP_NAME_FIRST", "Jane")
+				_ = os.Setenv("APP_NAME_LAST", "Doe")
 				return ""
 			},
 			cleanupFunc: func(_ *testing.T) {
-				os.Unsetenv("APP_NAME_FIRST")
-				os.Unsetenv("APP_NAME_LAST")
+				_ = os.Unsetenv("APP_NAME_FIRST")
+				_ = os.Unsetenv("APP_NAME_LAST")
 			},
 		},
 		{
 			name:    "env tags",
 			config:  &mockConfig{},
-			args:    []any{},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, []string{"foo", "bar", "baz"}, tc.Tags)
 			},
 			setupFunc: func(_ *testing.T) string {
-				os.Setenv("TAGS", "foo,bar,baz")
+				_ = os.Setenv("TAGS", "foo,bar,baz")
 				return ""
 			},
 			cleanupFunc: func(_ *testing.T) {
-				os.Unsetenv("TAGS")
+				_ = os.Unsetenv("TAGS")
 			},
 		},
 		{
 			name:    "env aliases",
 			config:  &mockConfig{},
-			args:    []any{types.WithEnvAliases{"name.first": "FIRSTNAME"}},
+			opts:    []Option{WithEnvAliases(Aliases{"name.first": "FIRSTNAME"})},
 			wantErr: false,
-			verify: func(t *testing.T, config types.Configure) {
+			verify: func(t *testing.T, config Configure) {
 				tc := config.(*mockConfig)
 				assert.Equal(t, "John", tc.Name.First)
 			},
 			setupFunc: func(_ *testing.T) string {
-				os.Setenv("FIRSTNAME", "John")
+				_ = os.Setenv("FIRSTNAME", "John")
 				return ""
 			},
 			cleanupFunc: func(_ *testing.T) {
-				os.Unsetenv("FIRSTNAME")
+				_ = os.Unsetenv("FIRSTNAME")
+			},
+		},
+		{
+			name:    "env file loading via alias",
+			config:  &mockConfig{},
+			opts:    []Option{WithEnvAliases(Aliases{"name.first": "FIRSTNAME"}), WithEnvFileLoading()},
+			wantErr: false,
+			verify: func(t *testing.T, config Configure) {
+				tc := config.(*mockConfig)
+				assert.Equal(t, "John", tc.Name.First)
+			},
+			setupFunc: func(_ *testing.T) string {
+				tmpDir := t.TempDir()
+				refFile := filepath.Join(tmpDir, "test.txt")
+				err := os.WriteFile(refFile, []byte("John \n"), 0o600)
+				require.NoError(t, err)
+				_ = os.Setenv("FIRSTNAME_FILE", refFile)
+				return ""
+			},
+			cleanupFunc: func(_ *testing.T) {
+				_ = os.Unsetenv("FIRSTNAME_FILE")
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setupFunc != nil {
-				tt.args = append(tt.args, types.WithConfigFilePath(tt.setupFunc(t)))
+				tt.opts = append(tt.opts, WithConfigFilePath(tt.setupFunc(t)))
 			}
 
 			if tt.cleanupFunc != nil {
 				defer tt.cleanupFunc(t)
 			}
 
-			gotErr := LoadConfig(tt.config, tt.args...)
+			gotErr := LoadConfig(tt.config, tt.opts...)
 			assert.Equal(t, tt.wantErr, gotErr != nil, gotErr)
 			if !tt.wantErr && tt.verify != nil {
 				tt.verify(t, tt.config)

@@ -1,4 +1,4 @@
-package types
+package config
 
 // Metadata contains metadata information about an application.
 type Metadata struct {
