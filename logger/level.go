@@ -1,4 +1,4 @@
-package types
+package logger
 
 import (
 	"errors"
@@ -19,10 +19,10 @@ const (
 	// These logs can help with monitoring the health of an application and understanding its behavior over time.
 	InfoLevel
 
-	// WarningLevel messages are used when something unexpected happened but did not cause the program to fail.
+	// WarnLevel messages are used when something unexpected happened but did not cause the program to fail.
 	// For example, "Failed to connect to database", "Invalid configuration value".
 	// It's important to monitor these logs as they often indicate a problem that may need attention soon.
-	WarningLevel
+	WarnLevel
 
 	// ErrorLevel messages are for reporting failures in a way that allows the application to continue running.
 	// For instance, "Could not find file", "Failed to parse JSON".
@@ -35,35 +35,46 @@ const (
 	// For example, "Failed to start server", "Database connection lost".
 	// These types of errors are usually indicative of serious problems that require immediate attention.
 	FatalLevel
-
-	// WarnLevel is an alias of WarningLevel.
-	WarnLevel = WarningLevel
 )
 
 var (
 	ErrInvalidLevel = errors.New("log level is invalid")
 
 	// LevelToString is a map that converts a Level to its string representation.
-	LevelToString = map[Level]string{DebugLevel: "debug", InfoLevel: "info", WarningLevel: "warning", ErrorLevel: "error", FatalLevel: "fatal"}
+	//nolint:gochecknoglobals // This is a lookup map that needs to be globally accessible.
+	LevelToString = map[Level]string{
+		DebugLevel: "debug",
+		InfoLevel:  "info",
+		WarnLevel:  "warn",
+		ErrorLevel: "error",
+		FatalLevel: "fatal",
+	}
 
 	// LevelToSyslog maps log levels to their corresponding syslog severity values.
-	LevelToSyslog = map[Level]int{DebugLevel: 7, InfoLevel: 6, WarningLevel: 4, ErrorLevel: 3, FatalLevel: 2}
+	//nolint:gochecknoglobals // This is a lookup map that needs to be globally accessible.
+	LevelToSyslog = map[Level]int{
+		//nolint:mnd // These numbers are standard syslog severity levels defined in RFC 5424.
+		DebugLevel: 7, InfoLevel: 6, WarnLevel: 4, ErrorLevel: 3, FatalLevel: 2,
+	}
 
 	// StringToLevel is a map that converts a string to its Level equivalent.
-	StringToLevel = map[string]Level{"debug": DebugLevel, "info": InfoLevel, "warning": WarningLevel, "error": ErrorLevel, "fatal": FatalLevel}
+	//nolint:gochecknoglobals // This is a lookup map that needs to be globally accessible.
+	StringToLevel = map[string]Level{
+		"debug":   DebugLevel,
+		"info":    InfoLevel,
+		"warn":    WarnLevel,
+		"warning": WarnLevel,
+		"error":   ErrorLevel,
+		"fatal":   FatalLevel,
+	}
 )
-
-func (r *Level) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + LevelToString[*r] + `"`), nil
-}
 
 func (r *Level) String() string {
 	return LevelToString[*r]
 }
 
-func (r *Level) UnmarshalJSON(data []byte) (err error) {
-	*r, err = ParseLevel(string(data))
-	return
+func (r *Level) MarshalText() ([]byte, error) {
+	return []byte(r.String()), nil
 }
 
 func (r *Level) UnmarshalText(text []byte) (err error) {
@@ -75,5 +86,5 @@ func ParseLevel(level string) (Level, error) {
 	if v, ok := StringToLevel[level]; ok {
 		return v, nil
 	}
-	return DebugLevel, ErrInvalidLevel
+	return InfoLevel, ErrInvalidLevel
 }

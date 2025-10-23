@@ -1,4 +1,4 @@
-package types
+package logger
 
 import (
 	"errors"
@@ -15,7 +15,7 @@ type Config struct {
 }
 
 func (r *Config) SetDefaults() {
-	r.Level = DebugLevel
+	r.Level = InfoLevel
 	r.Format = PlainFormat
 	r.Output = "/dev/stderr"
 }

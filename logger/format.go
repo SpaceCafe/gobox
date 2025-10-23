@@ -1,4 +1,4 @@
-package types
+package logger
 
 import (
 	"errors"
@@ -22,23 +22,28 @@ var (
 	ErrInvalidFormat = errors.New("log format is invalid")
 
 	// FormatToString is a map that converts a Format to its string representation.
-	FormatToString = map[Format]string{PlainFormat: "plain", JSONFormat: "json", SyslogFormat: "syslog"}
+	//nolint:gochecknoglobals // This is a lookup map that needs to be globally accessible.
+	FormatToString = map[Format]string{
+		PlainFormat:  "plain",
+		JSONFormat:   "json",
+		SyslogFormat: "syslog",
+	}
 
 	// StringToFormat is a map that converts a string to its Format equivalent.
-	StringToFormat = map[string]Format{"plain": PlainFormat, "json": JSONFormat, "syslog": SyslogFormat}
+	//nolint:gochecknoglobals // This is a lookup map that needs to be globally accessible.
+	StringToFormat = map[string]Format{
+		"plain":  PlainFormat,
+		"json":   JSONFormat,
+		"syslog": SyslogFormat,
+	}
 )
-
-func (r *Format) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + FormatToString[*r] + `"`), nil
-}
 
 func (r *Format) String() string {
 	return FormatToString[*r]
 }
 
-func (r *Format) UnmarshalJSON(data []byte) (err error) {
-	*r, err = ParseFormat(string(data))
-	return
+func (r *Format) MarshalText() ([]byte, error) {
+	return []byte(r.String()), nil
 }
 
 func (r *Format) UnmarshalText(text []byte) (err error) {
