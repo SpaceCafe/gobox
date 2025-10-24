@@ -1,34 +1,12 @@
 package httpserver
 
 import (
-	"errors"
 	"path"
 	"strings"
 	"time"
-
-	"github.com/spacecafe/gobox/logger"
 )
 
-const (
-	DefaultHost              = "127.0.0.1"
-	DefaultBasePath          = ""
-	DefaultReadTimeout       = time.Second * 30
-	DefaultReadHeaderTimeout = time.Second * 10
-	DefaultPort              = 8080
-)
-
-var (
-	ErrNoHost                   = errors.New("host cannot be empty")
-	ErrInvalidBasePath          = errors.New("base path must be absolute and not end with a slash")
-	ErrNoCertFile               = errors.New("key file is set but cert_file is empty")
-	ErrNoKeyFile                = errors.New("cert file is set but key_file is empty")
-	ErrInvalidReadTimeout       = errors.New("read timeout must be greater than 0")
-	ErrInvalidReadHeaderTimeout = errors.New("read header timeout must be greater than 0")
-	ErrInvalidPort              = errors.New("port must be a number between 1 and 65535")
-	ErrNoLogger                 = errors.New("logger cannot be empty")
-)
-
-// Config defines the essential parameters for serving a http server.
+// Config defines the essential parameters for serving an http server.
 type Config struct {
 
 	// Host represents network host address.
@@ -51,33 +29,17 @@ type Config struct {
 
 	// Port specifies the port to be used for connections.
 	Port int `json:"port" yaml:"port" mapstructure:"port"`
-
-	// Logger specifies the used logger instance.
-	Logger *logger.Logger
 }
 
-// NewConfig creates and returns a new Config having default values.
-func NewConfig(log *logger.Logger) *Config {
-	config := &Config{
-		Host:              DefaultHost,
-		BasePath:          DefaultBasePath,
-		ReadTimeout:       DefaultReadTimeout,
-		ReadHeaderTimeout: DefaultReadHeaderTimeout,
-		Port:              DefaultPort,
-	}
-
-	if log != nil {
-		config.Logger = log
-	} else {
-		config.Logger = logger.Default()
-	}
-
-	return config
+// SetDefaults initializes the default values for the relevant fields in the struct.
+func (r *Config) SetDefaults() {
+	r.Host = "127.0.0.1"
+	r.ReadTimeout = time.Second * 30       //nolint:mnd // Default timeout values
+	r.ReadHeaderTimeout = time.Second * 10 //nolint:mnd // Default header timeout values
+	r.Port = 8080
 }
 
 // Validate ensures the all necessary configurations are filled and within valid confines.
-// This includes checks for host, certificates, port, and timeouts.
-// Any misconfiguration results in well-defined standardized errors.
 func (r *Config) Validate() error {
 	if r.Host == "" {
 		return ErrNoHost
@@ -109,8 +71,5 @@ func (r *Config) Validate() error {
 		return ErrInvalidPort
 	}
 
-	if r.Logger == nil {
-		return ErrNoLogger
-	}
 	return nil
 }

@@ -13,6 +13,8 @@ import (
 )
 
 func TestHTTPServer_Start(t *testing.T) {
+	log := logger.New()
+
 	tests := []struct {
 		name   string
 		schema string
@@ -24,8 +26,7 @@ func TestHTTPServer_Start(t *testing.T) {
 			KeyFile:           "",
 			ReadTimeout:       30 * time.Second,
 			ReadHeaderTimeout: 10 * time.Second,
-			Port:              8888,
-			Logger:            logger.Default(),
+			Port:              58080,
 		}},
 		{"starts HTTPServer with TLS", "https", &Config{
 			Host:              "127.0.0.1",
@@ -33,13 +34,12 @@ func TestHTTPServer_Start(t *testing.T) {
 			KeyFile:           "testdata/key.pem",
 			ReadTimeout:       30 * time.Second,
 			ReadHeaderTimeout: 10 * time.Second,
-			Port:              8888,
-			Logger:            logger.Default(),
+			Port:              58080,
 		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := NewHTTPServer(tt.config)
+			server := New(tt.config, log)
 
 			// Register a simple route for testing.
 			server.Engine.GET("/ping", func(c *gin.Context) {
@@ -49,7 +49,8 @@ func TestHTTPServer_Start(t *testing.T) {
 			})
 
 			// Start the server in a new goroutine.
-			server.Start(context.Background(), func() {})
+			err := server.Start(context.Background(), func() {})
+			assert.NoError(t, err)
 
 			// Wait for the server to start.
 			time.Sleep(1 * time.Second)
@@ -57,13 +58,15 @@ func TestHTTPServer_Start(t *testing.T) {
 			// Make a request to check if the server is running.
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			req, err := http.NewRequestWithContext(ctx, "GET", tt.schema+"://127.0.0.1:8888/ping", http.NoBody)
+			req, err := http.NewRequestWithContext(ctx, "GET", tt.schema+"://127.0.0.1:58080/ping", http.NoBody)
 			assert.NoError(t, err)
 			// #nosec G402
 			client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 			resp, err := client.Do(req)
 			assert.NoError(t, err)
-			defer resp.Body.Close()
+			defer func(resp *http.Response) {
+				_ = resp.Body.Close()
+			}(resp)
 
 			// Check if we get a 200 OK response.
 			assert.Equal(t, 200, resp.StatusCode)
@@ -75,40 +78,41 @@ func TestHTTPServer_Start(t *testing.T) {
 
 func TestHTTPServer_Stop(t *testing.T) {
 	t.Run("stops HTTPServer", func(t *testing.T) {
-		config := NewConfig(nil)
-		config.Host = "127.0.0.1"
-		config.Port = 8888
+		config := &Config{}
+		config.SetDefaults()
+		config.Port = 58080
 
-		server := NewHTTPServer(config)
+		server := New(config, logger.New())
 
 		// Start the server in a separate goroutine.
 		ctx, cancel := context.WithCancel(context.Background())
-		server.Start(ctx, func() {})
+		err := server.Start(ctx, func() {})
+		assert.NoError(t, err)
 
 		// Wait for the server to start
 		time.Sleep(100 * time.Millisecond)
 
-		// Call Stop method and wait for it to finish.
+		// Call the Stop method and wait for it to finish.
 		cancel()
 
 		// Try to access the server after stopping
 		ctx, cancel = context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
-		req, err := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:8888", http.NoBody)
+		req, err := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:58080", http.NoBody)
 		assert.NoError(t, err)
 		resp, err := http.DefaultClient.Do(req)
 		assert.Error(t, err)
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	})
 }
 
 func TestNewHTTPServer(t *testing.T) {
 	t.Run("creates new HTTPServer", func(t *testing.T) {
-		config := NewConfig(nil)
-
-		server := NewHTTPServer(config)
+		config := &Config{}
+		config.SetDefaults()
+		server := New(config, logger.New())
 
 		assert.NotNil(t, server)
 		assert.Equal(t, config, server.config)

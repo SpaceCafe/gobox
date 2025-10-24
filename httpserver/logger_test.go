@@ -3,56 +3,54 @@ package httpserver
 import (
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spacecafe/gobox/logger"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLogger(t *testing.T) {
-	log := logger.New()
-	err := log.SetOutput("testdata/test.log")
-	if err != nil {
-		t.Error(err)
-	}
-	defer func() {
-		_ = os.Truncate("testdata/test.log", 0)
-	}()
+	gin.SetMode(gin.TestMode)
 
-	type args struct {
+	log := logger.New()
+	logfile := filepath.Join(t.TempDir(), "test.log")
+	err := log.SetOutput(logfile)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name   string
 		method string
 		url    string
 		status int
-	}
-	tests := []struct {
-		name string
-		args args
 	}{
-		{"Test1", args{http.MethodGet, "/testpath?id=42", http.StatusOK}},
-		{"Test2", args{http.MethodHead, "", http.StatusBadRequest}},
-		{"Test3", args{http.MethodPost, "/testpath", http.StatusMultipleChoices}},
-		{"Test4", args{http.MethodPut, "", http.StatusInternalServerError}},
-		{"Test5", args{http.MethodPatch, "", http.StatusOK}},
-		{"Test6", args{http.MethodDelete, "", http.StatusOK}},
-		{"Test7", args{http.MethodTrace, "", http.StatusOK}},
+		{"Test1", http.MethodGet, "/testpath?id=42", http.StatusOK},
+		{"Test2", http.MethodHead, "", http.StatusBadRequest},
+		{"Test3", http.MethodPost, "/testpath", http.StatusMultipleChoices},
+		{"Test4", http.MethodPut, "", http.StatusInternalServerError},
+		{"Test5", http.MethodPatch, "", http.StatusOK},
+		{"Test6", http.MethodDelete, "", http.StatusOK},
+		{"Test7", http.MethodTrace, "", http.StatusOK},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_ = os.Truncate("testdata/test.log", 0)
+			err = os.Truncate(logfile, 0)
+			require.NoError(t, err)
 
-			c, _ := gin.CreateTestContext(nil)
-			c.Request, _ = http.NewRequest(tt.args.method, tt.args.url, http.NoBody)
-			c.Status(tt.args.status)
-			Logger(log)(c)
+			ctx, _ := gin.CreateTestContext(nil)
+			ctx.Request, _ = http.NewRequestWithContext(ctx, tt.method, tt.url, http.NoBody)
+			ctx.Status(tt.status)
+			NewGinLogger(log)(ctx)
 
-			content, err := os.ReadFile("testdata/test.log")
+			content, err := os.ReadFile(logfile)
 			assert.NoError(t, err)
 			assert.NotEmpty(t, content)
-			assert.Contains(t, string(content), strconv.Itoa(tt.args.status))
-			assert.Contains(t, string(content), tt.args.method)
-			assert.Contains(t, string(content), tt.args.url)
+			assert.Contains(t, string(content), strconv.Itoa(tt.status))
+			assert.Contains(t, string(content), tt.method)
+			assert.Contains(t, string(content), tt.url)
 		})
 	}
 }
