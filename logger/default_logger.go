@@ -175,23 +175,25 @@ func (r *DefaultLogger) Output(level Level, calldepth int, format *string, v ...
 		l    *Entry
 	)
 
-	// Get information about the location of the logging call using runtime.Caller function with the provided calldepth.
-	// If it fails, set default values for filename and line number.
-	_, file, line, ok = runtime.Caller(calldepth)
-	if !ok {
-		file = "???"
-		line = 0
-	}
-
-	// Shorten the filename to only include the last part after the final '/'.
-	short := file
-	for i := len(file) - 1; i > 0; i-- {
-		if file[i] == '/' {
-			short = file[i+1:]
-			break
+	if r.level == DebugLevel {
+		// Get information about the location of the logging call using runtime.Caller function with the provided calldepth.
+		// If it fails, set default values for filename and line number.
+		_, file, line, ok = runtime.Caller(calldepth)
+		if !ok {
+			file = "???"
+			line = 0
 		}
+
+		// Shorten the filename to only include the last part after the final '/'.
+		short := file
+		for i := len(file) - 1; i > 0; i-- {
+			if file[i] == '/' {
+				short = file[i+1:]
+				break
+			}
+		}
+		file = short
 	}
-	file = short
 
 	// Create a new Entry with the given level, filename, line number, and message.
 	// If a format is nil, use fmt.Sprint to create the log message; otherwise, use fmt.Sprintf with the provided format string.

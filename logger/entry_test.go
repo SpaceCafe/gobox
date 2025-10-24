@@ -43,7 +43,7 @@ func TestItem_Marshal(t *testing.T) {
 			&Entry{
 				Date: mockDate,
 			},
-			`{"date":"2024-02-05T09:15:30Z", "file":"", "level":"debug", "message":"", "line":0}`,
+			`{"date":"2024-02-05T09:15:30Z", "level":"debug", "message":""}`,
 		},
 		{
 			"minimal json",
@@ -54,7 +54,7 @@ func TestItem_Marshal(t *testing.T) {
 					Number: 123456,
 				},
 			},
-			`{"date":"2024-02-05T09:15:30Z", "file":"", "level":"debug", "message":{"text":"Test message", "number":123456}, "line":0}`,
+			`{"date":"2024-02-05T09:15:30Z", "level":"debug", "message":{"text":"Test message", "number":123456}}`,
 		},
 	}
 	for _, tt := range tests {

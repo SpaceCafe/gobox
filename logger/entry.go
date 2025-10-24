@@ -12,7 +12,7 @@ type Entry struct {
 	Date time.Time `json:"date"`
 
 	// File represents the source code file where the log was created.
-	File string `json:"file"`
+	File string `json:"file,omitempty"`
 
 	// Level is the logging level (e.g., "info", "warning").
 	Level Level `json:"level"`
@@ -22,7 +22,7 @@ type Entry struct {
 	Message any `json:"message"`
 
 	// Line contains the corresponding line number where the log was created.
-	Line int `json:"line"`
+	Line int `json:"line,omitempty"`
 }
 
 // NewEntry creates a new Entry with the given parameters and current time.
