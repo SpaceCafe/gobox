@@ -34,16 +34,16 @@ var (
 func (r *DefaultLogger) outputPlain(entry *Entry, calldepth int) {
 	var b strings.Builder
 
-	b.WriteRune('[')
+	b.WriteByte('[')
 	b.WriteString(coloredLevelPrefixes[entry.Level])
-	b.WriteRune(']')
+	b.WriteByte(']')
 	for i := 0; i <= 7-len(LevelToString[entry.Level]); i++ {
-		b.WriteRune(' ')
+		b.WriteByte(' ')
 	}
 	b.WriteString(entry.Date.Format(plainTimeFormat))
-	b.WriteRune(' ')
+	b.WriteByte(' ')
 	b.WriteString(entry.File)
-	b.WriteRune(':')
+	b.WriteByte(':')
 	b.WriteString(strconv.Itoa(entry.Line))
 	b.WriteString(": ")
 	b.WriteString(entry.String())
@@ -64,7 +64,7 @@ func (r *DefaultLogger) outputJSON(entry *Entry, calldepth int) {
 func (r *DefaultLogger) outputSyslog(entry *Entry, calldepth int) {
 	var b strings.Builder
 
-	b.WriteRune('<')
+	b.WriteByte('<')
 
 	// The syslog facility is calculated using the formula: (facility * 8) + severity
 	// In this case, we're using facility level "LOCAL0".
