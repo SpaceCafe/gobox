@@ -59,6 +59,7 @@ linters:
             - github.com/spacecafe
             - github.com/stretchr/testify
             - github.com/go-playground/validator/v10
+            - github.com/testcontainers/testcontainers-go
     gocritic:
       enabled-tags:
         - diagnostic

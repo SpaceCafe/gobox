@@ -1,33 +1,8 @@
 package job_manager
 
 import (
-	"errors"
 	"os"
-	"slices"
 	"time"
-
-	"github.com/spacecafe/gobox/logger"
-)
-
-const (
-	DefaultBackend        = "redis"
-	DefaultRedisNamespace = "jobs"
-	DefaultRedisPort      = 6379
-	DefaultRedisTTL       = time.Hour
-	DefaultTimeout        = time.Second * 30
-)
-
-var (
-	//nolint:gochecknoglobals // Maintain a set of predefined backend names.
-	validBackends = []string{"redis"}
-
-	ErrNoWorkerName     = errors.New("worker name cannot be empty")
-	ErrInvalidBackend   = errors.New("backend is not valid")
-	ErrNoHost           = errors.New("host cannot be empty")
-	ErrInvalidPort      = errors.New("port must be a number between 1 and 65535")
-	ErrNoRedisNamespace = errors.New("redis namespace cannot be empty")
-	ErrInvalidRedisTTL  = errors.New("redis ttl must be greater than 0")
-	ErrInvalidTimeout   = errors.New("timeout must be greater than 0")
 )
 
 // Config holds configuration related to the job manager.
@@ -50,51 +25,34 @@ type Config struct {
 	// RedisNamespace is the namespace used to prefix keys in Redis.
 	RedisNamespace string `json:"redis_namespace" yaml:"redis_namespace" mapstructure:"redis_namespace"`
 
-	// RedisPort is the port number on which the Redis server is listening.
+	// RedisPort is the port number on which the Redis server is listening to.
 	RedisPort int `json:"redis_port" yaml:"redis_port" mapstructure:"redis_port"`
 
+	// RedisTTL is the time-to-live in seconds for a Redis key. This value determines how long the data should be cached before it expires.
 	RedisTTL time.Duration `json:"redis_ttl" yaml:"redis_ttl" mapstructure:"redis_ttl"`
 
 	// Timeout represents the amount of time allowed to wait for a job.
 	Timeout time.Duration `json:"timeout" yaml:"timeout" mapstructure:"timeout"`
-
-	// Logger specifies the used logger instance.
-	Logger *logger.Logger
 }
 
-// NewConfig creates and returns a new Config having default values.
-func NewConfig(log *logger.Logger) *Config {
-	config := &Config{
-		Backend:        DefaultBackend,
-		RedisNamespace: DefaultRedisNamespace,
-		RedisPort:      DefaultRedisPort,
-		RedisTTL:       DefaultRedisTTL,
-		Timeout:        DefaultTimeout,
-	}
-	config.WorkerName, _ = os.Hostname()
-
-	if log != nil {
-		config.Logger = log
-	} else {
-		config.Logger = logger.Default()
-	}
-
-	return config
+// SetDefaults initializes the default values for the relevant fields in the struct.
+func (r *Config) SetDefaults() {
+	r.WorkerName, _ = os.Hostname()
+	r.Backend = BackendRedis
+	r.RedisNamespace = "jobs"
+	r.RedisPort = 6379
+	r.RedisTTL = time.Hour
+	r.Timeout = time.Second * 30 //nolint:mnd // Default timeout value
 }
 
 // Validate ensures the all necessary configurations are filled and within valid confines.
-// Any misconfiguration results in well-defined standardized errors.
 func (r *Config) Validate() error {
 	if r.WorkerName == "" {
 		return ErrNoWorkerName
 	}
 
-	if !slices.Contains(validBackends, r.Backend) {
-		return ErrInvalidBackend
-	}
-
 	switch r.Backend {
-	case "redis":
+	case BackendRedis:
 		if r.RedisHost == "" {
 			return ErrNoHost
 		}
@@ -110,6 +68,8 @@ func (r *Config) Validate() error {
 		if r.RedisTTL <= 0 {
 			return ErrInvalidRedisTTL
 		}
+	default:
+		return ErrInvalidBackend
 	}
 
 	if r.Timeout <= 0 {
