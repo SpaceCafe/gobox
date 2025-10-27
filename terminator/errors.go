@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	ErrInvalidTimeout = errors.New("timeout must be greater than 0")
+	ErrInvalidTimeout = errors.New("terminator timeout must be greater than 0")
 )
