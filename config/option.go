@@ -1,7 +1,7 @@
 package config
 
 import (
-	logger2 "github.com/spacecafe/gobox/logger"
+	"github.com/spacecafe/gobox/logger"
 )
 
 // Option is a functional option that can be applied to any logger implementation.
@@ -9,9 +9,9 @@ import (
 type Option func(*Config)
 
 // WithLogger sets a custom logger in the Config configuration. This allows overriding the default logging implementation.
-func WithLogger(logger logger2.Logger) Option {
+func WithLogger(log logger.Logger) Option {
 	return func(c *Config) {
-		c.Logger = logger
+		c.Log = log
 	}
 }
 

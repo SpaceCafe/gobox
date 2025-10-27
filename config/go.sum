@@ -10,6 +10,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/spacecafe/gobox/logger v0.0.0-20251022110553-e937a8b87c26 h1:bozC4ubzsmod73vwjtiG/9aZ7Yw2H8BKaKBPFSpQkho=
 github.com/spacecafe/gobox/logger v0.0.0-20251022110553-e937a8b87c26/go.mod h1:p9yozVcNy4T1FS5zc1T1iTX5HZTZw/l0TowWeDrgW38=
+github.com/spacecafe/gobox/logger v0.0.0-20251022124349-b4b23f362d45 h1:foth3AOTcGkVtDe3uP5QLYSdxRoNC/Bgvn9sKpspcRY=
+github.com/spacecafe/gobox/logger v0.0.0-20251022124349-b4b23f362d45/go.mod h1:p9yozVcNy4T1FS5zc1T1iTX5HZTZw/l0TowWeDrgW38=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

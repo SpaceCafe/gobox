@@ -3,7 +3,7 @@ module github.com/spacecafe/gobox/config
 go 1.24.0
 
 require (
-	github.com/spacecafe/gobox/logger v0.0.0-20251022110553-e937a8b87c26
+	github.com/spacecafe/gobox/logger v0.0.0-20251022124349-b4b23f362d45
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
 )

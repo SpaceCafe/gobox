@@ -107,7 +107,7 @@ func (r *envDecoder) getEnvValue(envName string) (string, bool) {
 		if filePath, ok := os.LookupEnv(envName + "_FILE"); ok {
 			content, err := os.ReadFile(filepath.Clean(filePath))
 			if err != nil {
-				r.cfg.Logger.Warn(err)
+				r.cfg.Log.Warn(err)
 				return "", false
 			}
 			return strings.TrimSpace(string(content)), true

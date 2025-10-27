@@ -9,7 +9,7 @@ import (
 
 // Config contain configuration settings, including logging, metadata, environment, YAML, and file loading preferences.
 type Config struct {
-	Logger           logger.Logger
+	Log              logger.Logger
 	ConfigFilePath   string
 	EnvPrefix        string
 	Metadata         *Metadata
@@ -29,7 +29,7 @@ func (r *Config) SetDefaults() {
 		name = "app"
 	}
 
-	r.Logger = logger.Default()
+	r.Log = logger.Default()
 	r.Metadata = &Metadata{
 		AppName: name,
 		Slug:    name,
