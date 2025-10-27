@@ -1,4 +1,4 @@
-package httpserver
+package http_server
 
 import (
 	"context"
@@ -115,7 +115,7 @@ func TestNewHTTPServer(t *testing.T) {
 		server := New(config, logger.New())
 
 		assert.NotNil(t, server)
-		assert.Equal(t, config, server.config)
+		assert.Equal(t, config, server.cfg)
 		assert.NotNil(t, server.server)
 		assert.NotNil(t, server.Engine)
 		assert.Equal(t, server.Engine, server.server.Handler)

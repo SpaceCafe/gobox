@@ -10,7 +10,7 @@ use (
 	gin-ratelimit
 	gin-rest
 	gin-saml
-	httpserver
+	http-server
 	job-manager
 	logger
 	terminator

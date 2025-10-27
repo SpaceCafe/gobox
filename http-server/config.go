@@ -1,4 +1,4 @@
-package httpserver
+package http_server
 
 import (
 	"path"
@@ -34,8 +34,8 @@ type Config struct {
 // SetDefaults initializes the default values for the relevant fields in the struct.
 func (r *Config) SetDefaults() {
 	r.Host = "127.0.0.1"
-	r.ReadTimeout = time.Second * 30       //nolint:mnd // Default timeout values
-	r.ReadHeaderTimeout = time.Second * 10 //nolint:mnd // Default header timeout values
+	r.ReadTimeout = time.Second * 30       //nolint:mnd // Default timeout value
+	r.ReadHeaderTimeout = time.Second * 10 //nolint:mnd // Default header timeout value
 	r.Port = 8080
 }
 

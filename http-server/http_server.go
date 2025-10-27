@@ -1,4 +1,4 @@
-package httpserver
+package http_server
 
 import (
 	"context"
@@ -13,15 +13,11 @@ import (
 	"github.com/spacecafe/gobox/logger"
 )
 
-var (
-	ErrNoContext = errors.New("context can not be empty")
-)
-
 // HTTPServer encapsulates an HTTP server with some additional features.
 type HTTPServer struct {
 
 	// Config contains configuration settings for the HTTP server.
-	config *Config
+	cfg *Config
 
 	log logger.ConfigurableLogger
 
@@ -39,17 +35,17 @@ type HTTPServer struct {
 }
 
 // New creates a new instance of HTTPServer with the given configuration.
-func New(config *Config, log logger.ConfigurableLogger) *HTTPServer {
+func New(cfg *Config, log logger.ConfigurableLogger) *HTTPServer {
 	var server = &HTTPServer{
-		config: config,
-		log:    log,
+		cfg: cfg,
+		log: log,
 
 		// Initializes a new http server with the given host and port from config,
 		// read timeout and read header timeout from config as well.
 		server: &http.Server{
-			Addr:              fmt.Sprintf("%s:%d", config.Host, config.Port),
-			ReadTimeout:       config.ReadTimeout,
-			ReadHeaderTimeout: config.ReadHeaderTimeout,
+			Addr:              fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+			ReadTimeout:       cfg.ReadTimeout,
+			ReadHeaderTimeout: cfg.ReadHeaderTimeout,
 		},
 	} // Set the mode of gin dependent on the logging level.
 	if log.Level() == logger.DebugLevel {
@@ -82,10 +78,10 @@ func New(config *Config, log logger.ConfigurableLogger) *HTTPServer {
 	})
 
 	// Sets the base path for all routes using the Router group.
-	if config.BasePath == "" {
+	if cfg.BasePath == "" {
 		server.Router = &engine.RouterGroup
 	} else {
-		server.Router = engine.Group(config.BasePath)
+		server.Router = engine.Group(cfg.BasePath)
 	}
 
 	return server
@@ -109,12 +105,12 @@ func (r *HTTPServer) Start(ctx context.Context, done func()) error {
 	go func() {
 		var err error
 
-		if r.config.CertFile != "" {
+		if r.cfg.CertFile != "" {
 			// Starts with TLS.
 			r.server.TLSConfig = &tls.Config{
 				MinVersion: tls.VersionTLS12,
 			}
-			err = r.server.ListenAndServeTLS(r.config.CertFile, r.config.KeyFile)
+			err = r.server.ListenAndServeTLS(r.cfg.CertFile, r.cfg.KeyFile)
 		} else {
 			// Starts without TLS.
 			err = r.server.ListenAndServe()
@@ -142,9 +138,9 @@ func (r *HTTPServer) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	r.log.Infof("stopping http server at '%s'", r.server.Addr)
+	r.log.Infof("stopping http-server at '%s'", r.server.Addr)
 
 	if err := r.server.Shutdown(ctx); err != nil {
-		r.log.Warnf("shutdown of http server was unsuccessful: %s", err)
+		r.log.Warnf("shutdown of http-server was unsuccessful: %s", err)
 	}
 }
