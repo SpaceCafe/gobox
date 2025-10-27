@@ -20,7 +20,10 @@ func SendSigTerm() error {
 
 func TestWithoutTracking(t *testing.T) {
 	t.Run("", func(t *testing.T) {
-		_ = New(NewConfig())
+		_ = New(&Config{
+			Timeout: time.Second,
+			Force:   true,
+		})
 
 		// Mock os.Exit to prevent the test from exiting.
 		exitCh := make(chan int)
@@ -28,7 +31,7 @@ func TestWithoutTracking(t *testing.T) {
 			exitCh <- code
 		}
 
-		SendSigTerm()
+		_ = SendSigTerm()
 
 		// Wait for the osExit to be called.
 		select {
@@ -41,8 +44,13 @@ func TestWithoutTracking(t *testing.T) {
 }
 
 func TestWithTracking(t *testing.T) {
+	cfg := &Config{}
+	cfg.SetDefaults()
 	t.Run("", func(t *testing.T) {
-		terminator := New(NewConfig())
+		terminator := New(&Config{
+			Timeout: time.Second,
+			Force:   true,
+		})
 
 		// Mock os.Exit to prevent the test from exiting.
 		exitCh := make(chan int)
@@ -54,9 +62,9 @@ func TestWithTracking(t *testing.T) {
 			<-ctx.Done()
 			<-time.After(time.Second)
 			done()
-		}(terminator.FullTracking())
+		}(terminator.TrackWithDone())
 
-		SendSigTerm()
+		_ = SendSigTerm()
 
 		// Wait for the osExit to be called.
 		select {

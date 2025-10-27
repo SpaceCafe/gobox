@@ -1,36 +1,26 @@
 package terminator
 
 import (
-	"errors"
 	"time"
 )
 
-const (
-	DefaultTimeout = 3 * time.Second
-)
-
-var (
-	ErrInvalidTimeout = errors.New("timeout must be greater than 0")
-)
-
-// Config holds configuration related to Terminator.
+// Config defines the essential parameters for serving the terminator.
 type Config struct {
 
-	// Timeout specifies the duration before the application is forced killed.
-	Timeout time.Duration
+	// Timeout specifies the duration before the application is forcefully killed.
+	Timeout time.Duration `json:"timeout" yaml:"timeout" mapstructure:"timeout"`
+
+	// Force indicates whether to forcibly terminate the application without waiting for a graceful shutdown.
+	Force bool `json:"force" yaml:"force" mapstructure:"force"`
 }
 
-// NewConfig creates and returns a new Config having default values.
-func NewConfig() *Config {
-	config := &Config{
-		Timeout: DefaultTimeout,
-	}
-
-	return config
+// SetDefaults initializes the default values for the relevant fields in the struct.
+func (r *Config) SetDefaults() {
+	r.Timeout = time.Second * 3 //nolint:mnd // Default timeout value
+	r.Force = true
 }
 
 // Validate ensures the all necessary configurations are filled and within valid confines.
-// Any misconfiguration results in well-defined standardized errors.
 func (r *Config) Validate() error {
 	if r.Timeout <= 0 {
 		return ErrInvalidTimeout
