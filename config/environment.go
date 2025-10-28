@@ -9,6 +9,10 @@ import (
 	"strings"
 )
 
+type EnvAliasesProvider interface {
+	EnvAliases() map[string]string
+}
+
 type envDecoder struct {
 	cfg      *Config
 	mappings []fieldMapping

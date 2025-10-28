@@ -22,6 +22,10 @@ func LoadConfig(config Configure, opts ...Option) error {
 		cfg.Metadata = v.Metadata()
 	}
 
+	if v, ok := config.(EnvAliasesProvider); ok {
+		cfg.EnvAliases = v.EnvAliases()
+	}
+
 	if cfg.Flags {
 		setupFlags(cfg)
 	}
