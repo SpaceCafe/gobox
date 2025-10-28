@@ -2,9 +2,13 @@ package logger
 
 import (
 	"errors"
+
+	"github.com/spacecafe/gobox/config"
 )
 
 var (
+	_ config.Configure = (*Config)(nil)
+
 	ErrInvalidOutput = errors.New("invalid output format")
 )
 

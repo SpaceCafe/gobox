@@ -1,4 +1,4 @@
-module github.com/spacecafe/gobox/httpserver
+module github.com/spacecafe/gobox/http-server
 
 go 1.24.0
 

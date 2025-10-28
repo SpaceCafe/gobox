@@ -4,6 +4,12 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/spacecafe/gobox/config"
+)
+
+var (
+	_ config.Configure = (*Config)(nil)
 )
 
 // Config defines the essential parameters for serving an http server.

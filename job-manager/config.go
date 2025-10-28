@@ -3,6 +3,12 @@ package job_manager
 import (
 	"os"
 	"time"
+
+	"github.com/spacecafe/gobox/config"
+)
+
+var (
+	_ config.Configure = (*Config)(nil)
 )
 
 // Config holds configuration related to the job manager.

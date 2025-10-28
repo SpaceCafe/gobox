@@ -2,6 +2,12 @@ package terminator
 
 import (
 	"time"
+
+	"github.com/spacecafe/gobox/config"
+)
+
+var (
+	_ config.Configure = (*Config)(nil)
 )
 
 // Config defines the essential parameters for serving the terminator.
