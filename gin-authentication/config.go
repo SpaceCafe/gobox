@@ -1,75 +1,81 @@
 package authentication
 
 import (
-	"errors"
-	"regexp"
-)
-
-const (
-	DefaultHeaderName        = "Authorization"
-	DefaultHeaderValuePrefix = "Bearer"
+	"github.com/spacecafe/gobox/config"
+	"github.com/spacecafe/gobox/gin-authentication/jwt"
 )
 
 var (
-	ErrInvalidAPIKeys    = errors.New("api keys must not be nil")
-	ErrNoAPISecretKey    = errors.New("api secret key must not be nil")
-	ErrInvalidHeaderName = errors.New("header name contains invalid characters")
-	ErrInvalidUsers      = errors.New("users must not be nil")
-	ErrNoPassword        = errors.New("password of a user cannot be empty")
-
-	validHeaderName = regexp.MustCompile(`^[A-Za-z0-9-]+$`)
+	_ config.Configure = (*Config)(nil)
 )
 
 // Config holds configuration related to user and API key authentication.
 type Config struct {
+	// Tokens list representing API keys that can be used to authenticate requests.
+	Tokens []string `json:"tokens" yaml:"tokens" mapstructure:"tokens"`
 
-	// APIKeys list representing API keys that can be used to authenticate requests.
-	APIKeys []string `json:"api_keys" yaml:"api_keys" mapstructure:"api_keys"`
+	// Authenticators is a list of authenticators that can be used to authenticate requests.
+	Authenticators []Authenticator
 
-	// HeaderName is the name of the header that contains the authentication token.
-	// This could be "Authorization" or "API-Key", for example, which is commonly used in HTTP authentication.
-	HeaderName string `json:"header_name" yaml:"header_name" mapstructure:"header_name"`
+	// Repository is the repository used to store and retrieve user information.
+	Repository Repository
 
-	// HeaderValuePrefix is a prefix that will be added to the API key in the header.
-	// This can be used to provide additional context or information about how the API key was obtained,
-	// such as "Bearer", which is commonly used in HTTP authentication.
-	HeaderValuePrefix string `json:"header_value_prefix" yaml:"header_value_prefix" mapstructure:"header_value_prefix"`
+	// Principals is a map of principal ids to passwords.
+	Principals map[string]string `json:"principals" yaml:"principals" mapstructure:"principals"`
 
-	// Users is a map where keys are usernames and values are passwords. It's used for basic HTTP authentication.
-	Users map[string]string `json:"users" yaml:"users" mapstructure:"users"`
+	JWT *jwt.Config `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
 }
 
-// NewConfig creates and returns a new Config having default values.
-func NewConfig() *Config {
-	return &Config{
-		APIKeys:           make([]string, 0),
-		HeaderName:        DefaultHeaderName,
-		HeaderValuePrefix: DefaultHeaderValuePrefix,
-		Users:             make(map[string]string),
+// SetDefaults initializes the default values for the relevant fields in the struct.
+func (r *Config) SetDefaults() {
+	r.Tokens = []string{}
+	r.Authenticators = []Authenticator{
+		NewTokenAuthenticator(r),
 	}
+	r.Repository = NewConfigRepository(r)
+	r.Principals = map[string]string{}
+	r.JWT = &jwt.Config{}
+	r.JWT.SetDefaults()
 }
 
 // Validate ensures the all necessary configurations are filled and within valid confines.
-// Any misconfiguration results in well-defined standardized errors.
 func (r *Config) Validate() error {
-	if r.APIKeys == nil {
-		return ErrInvalidAPIKeys
+	if r.Tokens == nil {
+		return ErrInvalidTokens
 	}
-	for i := range r.APIKeys {
-		if r.APIKeys[i] == "" {
-			return ErrNoAPISecretKey
+	for i := range r.Tokens {
+		if r.Tokens[i] == "" {
+			return ErrEmptyToken
 		}
 	}
-	if !validHeaderName.MatchString(r.HeaderName) {
-		return ErrInvalidHeaderName
+
+	if r.Authenticators == nil {
+		return ErrInvalidAuthenticators
 	}
-	if r.Users == nil {
-		return ErrInvalidUsers
-	}
-	for i := range r.Users {
-		if r.Users[i] == "" {
-			return ErrNoPassword
+	for i := range r.Authenticators {
+		if r.Authenticators[i] == nil {
+			return ErrInvalidAuthenticators
+		}
+		switch r.Authenticators[i].(type) {
+		case *BearerAuthenticator, *JWTAuthenticator:
+			if err := r.JWT.Validate(); err != nil {
+				return err
+			}
 		}
 	}
+
+	if r.Repository == nil {
+		return ErrInvalidRepository
+	}
+
+	if r.Principals == nil {
+		return ErrInvalidPrincipals
+	}
+	for i := range r.Principals {
+		if r.Principals[i] == "" {
+			return ErrEmptyPassword
+		}
+	}
+
 	return nil
 }
