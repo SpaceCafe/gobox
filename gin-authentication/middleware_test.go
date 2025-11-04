@@ -565,7 +565,8 @@ func TestToken_Renew(t *testing.T) {
 			claims := jwt.NewClaims("test-user")
 			claims.IdentityClaims.Name = "Test User"
 			token := jwt.New(cfg.JWT, claims, tt.tokenType)
-			originalExpiresAt := token.Claims().ExpiresAt.Time
+			originalSessionID := token.Claims().SessionID()
+			originalExpiresAt := token.Claims().ExpiresAt()
 			originalIssuedAt := token.Claims().IssuedAt.Time
 			originalNotBefore := token.Claims().NotBefore.Time
 
@@ -577,7 +578,7 @@ func TestToken_Renew(t *testing.T) {
 			renewedClaims := token.Claims()
 			require.NotNil(t, renewedClaims)
 
-			newExpiresAt := renewedClaims.ExpiresAt.Time
+			newExpiresAt := renewedClaims.ExpiresAt()
 			assert.True(t, newExpiresAt.After(originalExpiresAt))
 
 			// Verify the new expiry is approximately correct (within 1-second tolerance)
@@ -585,6 +586,7 @@ func TestToken_Renew(t *testing.T) {
 			timeDiff := newExpiresAt.Sub(expectedExpiry).Abs()
 			assert.Less(t, timeDiff, time.Second)
 
+			assert.NotEqual(t, originalSessionID, renewedClaims.SessionID())
 			assert.Equal(t, "test-user", renewedClaims.Subject)
 			assert.Equal(t, "Test User", renewedClaims.IdentityClaims.Name)
 			assert.Equal(t, originalIssuedAt, renewedClaims.IssuedAt.Time)

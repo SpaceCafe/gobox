@@ -1,6 +1,8 @@
 package jwt
 
 import (
+	"time"
+
 	jwt2 "github.com/golang-jwt/jwt/v5"
 )
 
@@ -176,12 +178,26 @@ func NewClaims(subject string) *Claims {
 	}
 }
 
+func (r *Claims) CreatedAt() time.Time {
+	if r.IssuedAt == nil {
+		return time.Time{}
+	}
+	return r.IssuedAt.Time
+}
+
 func (r *Claims) Email() string {
 	return r.IdentityClaims.Email
 }
 
 func (r *Claims) Entitlements() []string {
 	return r.AuthorizationClaims.Entitlements
+}
+
+func (r *Claims) ExpiresAt() time.Time {
+	if r.RegisteredClaims.ExpiresAt == nil {
+		return time.Time{}
+	}
+	return r.RegisteredClaims.ExpiresAt.Time
 }
 
 func (r *Claims) FirstName() string {
@@ -206,6 +222,10 @@ func (r *Claims) Name() string {
 
 func (r *Claims) Roles() []string {
 	return r.AuthorizationClaims.Roles
+}
+
+func (r *Claims) SessionID() string {
+	return r.RegisteredClaims.ID
 }
 
 func (r *Claims) SetEmail(email string) {

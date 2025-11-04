@@ -4,6 +4,7 @@ import (
 	"time"
 
 	jwt2 "github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type TokenType string
@@ -27,9 +28,10 @@ func New(cfg *Config, claims *Claims, tokenType TokenType) *Token {
 		tokenType: tokenType,
 	}
 
+	claims.RegisteredClaims.ID = uuid.New().String()
 	claims.Issuer = cfg.Issuer
 	claims.Audience = cfg.Audience
-	claims.ExpiresAt = jwt2.NewNumericDate(time.Now().Add(token.TTL()))
+	claims.RegisteredClaims.ExpiresAt = jwt2.NewNumericDate(time.Now().Add(token.TTL()))
 	claims.NotBefore = jwt2.NewNumericDate(time.Now())
 	claims.IssuedAt = jwt2.NewNumericDate(time.Now())
 	token.Token = jwt2.NewWithClaims(token.cfg.Signer, claims)
@@ -80,7 +82,8 @@ func (r *Token) Renew() error {
 		return ErrClaimsIsNil
 	}
 
-	claims.ExpiresAt = jwt2.NewNumericDate(time.Now().Add(r.TTL()))
+	claims.RegisteredClaims.ID = uuid.New().String()
+	claims.RegisteredClaims.ExpiresAt = jwt2.NewNumericDate(time.Now().Add(r.TTL()))
 	r.Token = jwt2.NewWithClaims(r.cfg.Signer, claims)
 	return nil
 }
