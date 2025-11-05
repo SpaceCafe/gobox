@@ -1,4 +1,4 @@
-package http_server
+package httpserver_test
 
 import (
 	"net/http"
@@ -8,18 +8,15 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	httpserver "github.com/spacecafe/gobox/http-server"
 	"github.com/spacecafe/gobox/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLogger(t *testing.T) {
+	t.Parallel()
 	gin.SetMode(gin.TestMode)
-
-	log := logger.New()
-	logfile := filepath.Join(t.TempDir(), "test.log")
-	err := log.SetOutput(logfile)
-	require.NoError(t, err)
 
 	tests := []struct {
 		name   string
@@ -37,16 +34,23 @@ func TestLogger(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := logger.New()
+			logfile := filepath.Join(t.TempDir(), "test.log")
+			err := log.SetOutput(logfile)
+			require.NoError(t, err)
+
 			err = os.Truncate(logfile, 0)
 			require.NoError(t, err)
 
 			ctx, _ := gin.CreateTestContext(nil)
 			ctx.Request, _ = http.NewRequestWithContext(ctx, tt.method, tt.url, http.NoBody)
 			ctx.Status(tt.status)
-			NewGinLogger(log)(ctx)
+			httpserver.NewGinLogger(log)(ctx)
 
 			content, err := os.ReadFile(logfile)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.NotEmpty(t, content)
 			assert.Contains(t, string(content), strconv.Itoa(tt.status))
 			assert.Contains(t, string(content), tt.method)

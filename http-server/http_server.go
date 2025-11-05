@@ -1,4 +1,4 @@
-package http_server
+package httpserver
 
 import (
 	"context"
@@ -11,11 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 	problems "github.com/spacecafe/gobox/gin-problems"
 	"github.com/spacecafe/gobox/logger"
+	"github.com/spacecafe/gobox/terminator"
 )
+
+var _ terminator.CallbackTracker = (*HTTPServer)(nil)
 
 // HTTPServer encapsulates an HTTP server with some additional features.
 type HTTPServer struct {
-
 	// Config contains configuration settings for the HTTP server.
 	cfg *Config
 
@@ -36,7 +38,7 @@ type HTTPServer struct {
 
 // New creates a new instance of HTTPServer with the given configuration.
 func New(cfg *Config, log logger.ConfigurableLogger) *HTTPServer {
-	var server = &HTTPServer{
+	server := &HTTPServer{
 		cfg: cfg,
 		log: log,
 
@@ -59,6 +61,7 @@ func New(cfg *Config, log logger.ConfigurableLogger) *HTTPServer {
 	if log.Level() <= logger.InfoLevel {
 		engine.Use(NewGinLogger(log))
 	}
+
 	engine.Use(gin.Recovery(), problems.New())
 	server.SetEngine(engine)
 
@@ -126,6 +129,8 @@ func (r *HTTPServer) Start(ctx context.Context, done func()) error {
 
 	go func() {
 		<-ctx.Done()
+
+		//nolint:contextcheck // Context is a field of the HTTPServer.
 		r.Stop()
 	}()
 
@@ -135,12 +140,14 @@ func (r *HTTPServer) Start(ctx context.Context, done func()) error {
 // Stop function stops the HTTP server gracefully within a second time limit.
 func (r *HTTPServer) Stop() {
 	defer r.done()
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	r.log.Infof("stopping http-server at '%s'", r.server.Addr)
 
-	if err := r.server.Shutdown(ctx); err != nil {
+	err := r.server.Shutdown(ctx)
+	if err != nil {
 		r.log.Warnf("shutdown of http-server was unsuccessful: %s", err)
 	}
 }

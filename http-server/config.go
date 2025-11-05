@@ -1,4 +1,4 @@
-package http_server
+package httpserver
 
 import (
 	"path"
@@ -8,33 +8,30 @@ import (
 	"github.com/spacecafe/gobox/config"
 )
 
-var (
-	_ config.Configure = (*Config)(nil)
-)
+var _ config.Configure = (*Config)(nil)
 
 // Config defines the essential parameters for serving an http server.
 type Config struct {
-
 	// Host represents network host address.
-	Host string `json:"host" yaml:"host" mapstructure:"host"`
+	Host string `json:"host" mapstructure:"host" yaml:"host"`
 
 	// BasePath represents the prefixed path in the URL.
-	BasePath string `json:"base_path" yaml:"base_path" mapstructure:"base_path"`
+	BasePath string `json:"basePath" mapstructure:"base-path" yaml:"basePath"`
 
 	// CertFile represents the path to the certificate file.
-	CertFile string `json:"cert_file" yaml:"cert_file" mapstructure:"cert_file"`
+	CertFile string `json:"certFile" mapstructure:"cert-file" yaml:"certFile"`
 
 	// KeyFile represents the path to the key file.
-	KeyFile string `json:"key_file" yaml:"key_file" mapstructure:"key_file"`
+	KeyFile string `json:"keyFile" mapstructure:"key-file" yaml:"keyFile"`
 
 	// ReadTimeout represents the maximum duration before timing out read of the request.
-	ReadTimeout time.Duration `json:"read_timeout" yaml:"read_timeout" mapstructure:"read_timeout"`
+	ReadTimeout time.Duration `json:"readTimeout" mapstructure:"read-timeout" yaml:"readTimeout"`
 
 	// ReadHeaderTimeout represents the amount of time allowed to read request headers.
-	ReadHeaderTimeout time.Duration `json:"read_header_timeout" yaml:"read_header_timeout" mapstructure:"read_header_timeout"`
+	ReadHeaderTimeout time.Duration `json:"readHeaderTimeout" mapstructure:"read-header-timeout" yaml:"readHeaderTimeout"`
 
 	// Port specifies the port to be used for connections.
-	Port int `json:"port" yaml:"port" mapstructure:"port"`
+	Port int `json:"port" mapstructure:"port" yaml:"port"`
 }
 
 // SetDefaults initializes the default values for the relevant fields in the struct.
