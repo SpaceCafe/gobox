@@ -1,31 +1,14 @@
+---
 version: "2"
 linters:
-  enable:
-    - bodyclose
-    - copyloopvar
-    - depguard
-    - dogsled
-    - dupl
-    - errorlint
-    - funlen
-    - gocheckcompilerdirectives
-    - gochecknoglobals
-    - gochecknoinits
-    - goconst
-    - gocritic
-    - godot
-    - godox
-    - goprintffuncname
-    - gosec
-    - misspell
-    - mnd
-    - nakedret
-    - noctx
-    - nolintlint
-    - staticcheck
-    - unconvert
-    - unparam
+  default: all
+  disable:
+    - exhaustruct
+    - nonamedreturns
+    - wsl
   settings:
+    cyclop:
+      max-complexity: 20
     depguard:
       rules:
         main:
@@ -47,6 +30,7 @@ linters:
             - github.com/aws/smithy-go
             - github.com/redis/go-redis/v9
             - gopkg.in/yaml.v3
+            - golang.org/x/crypto/bcrypt
         tests:
           list-mode: strict
           files:
@@ -60,15 +44,38 @@ linters:
             - github.com/stretchr/testify
             - github.com/go-playground/validator/v10
             - github.com/testcontainers/testcontainers-go
+            - golang.org/x/crypto/bcrypt
+    funcorder:
+      constructor: true
+      struct-method: true
+      alphabetical: true
     gocritic:
-      enabled-tags:
-        - diagnostic
-        - style
-        - performance
-        - experimental
-        - opinionated
+      enable-all: true
     gocyclo:
-      min-complexity: 10
+      min-complexity: 20
+    tagliatelle:
+      case:
+        extended-rules:
+          json:
+            case: goCamel
+          yaml:
+            case: goCamel
+    varnamelen:
+      check-return: true
+      check-type-param: true
+      ignore-names:
+        - ctx
+        - err
+        - id
+        - ok
+        - tt
+      ignore-decls:
+        - t testing.T
+        - e error
+        - i int
+        - const C
+        - T any
+        - m map[string]int
   exclusions:
     generated: lax
     presets:
@@ -86,8 +93,12 @@ linters:
       - examples$
 formatters:
   enable:
+    - gci
     - gofmt
+    - gofumpt
     - goimports
+    - golines
+    - swaggo
   settings:
     gofmt:
       rewrite-rules:
@@ -101,3 +112,7 @@ formatters:
       - third_party$
       - builtin$
       - examples$
+run:
+  allow-parallel-runners: true
+  relative-path-mode: gomod
+...
