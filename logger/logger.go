@@ -1,5 +1,9 @@
 package logger
 
+import (
+	"io"
+)
+
 // Logger is the main logging interface that implementations must satisfy.
 type Logger interface {
 	Debug(v ...any)
@@ -19,12 +23,13 @@ type ConfigurableLogger interface {
 	Logger
 
 	Level() Level
-	SetLevel(Level) error
+	SetLevel(level Level) error
 
 	Format() Format
-	SetFormat(Format) error
+	SetFormat(format Format) error
 
-	SetOutput(filename string) error
+	SetFileOutput(filename string) error
+	SetOutput(writer io.Writer)
 }
 
 // AdvancedLogger provides low-level output control.

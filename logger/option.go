@@ -18,10 +18,10 @@ func WithFormat(format Format) Option {
 	}
 }
 
-// WithOutput sets the output destination.
-func WithOutput(filename string) Option {
+// WithFileOutput sets the output destination.
+func WithFileOutput(filename string) Option {
 	return func(l ConfigurableLogger) {
-		_ = l.SetOutput(filename)
+		_ = l.SetFileOutput(filename)
 	}
 }
 
@@ -30,6 +30,6 @@ func WithConfig(cfg *Config) Option {
 	return func(l ConfigurableLogger) {
 		_ = l.SetLevel(cfg.Level)
 		_ = l.SetFormat(cfg.Format)
-		_ = l.SetOutput(cfg.Output)
+		_ = l.SetFileOutput(cfg.Output)
 	}
 }

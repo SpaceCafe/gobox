@@ -47,6 +47,7 @@ func (r *Entry) Marshal() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal Entry: %w", err)
 	}
+
 	return out, nil
 }
 

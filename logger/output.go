@@ -15,9 +15,9 @@ const (
 )
 
 var (
-	// osExit is a variable for testing purposes.
+	// OsExit is a variable for testing purposes.
 	//nolint:gochecknoglobals // This is a mock for os.Exit used in tests to prevent actual program termination
-	osExit = os.Exit
+	OsExit = os.Exit
 
 	// ColoredLevelPrefixes is used to set the color and format of log prefixes based on log level.
 	//nolint:gochecknoglobals // This is a lookup map that needs to be globally accessible.
@@ -32,27 +32,29 @@ var (
 
 // outputPlain is a wrapper function to create a log entry in plain text.
 func (r *DefaultLogger) outputPlain(entry *Entry, calldepth int) {
-	var b strings.Builder
+	var builder strings.Builder
 
-	b.WriteByte('[')
-	b.WriteString(ColoredLevelPrefixes[entry.Level])
-	b.WriteByte(']')
+	builder.WriteByte('[')
+	builder.WriteString(ColoredLevelPrefixes[entry.Level])
+	builder.WriteByte(']')
+
 	for i := len(LevelToString[entry.Level]); i < 7; i++ {
-		b.WriteByte(' ')
+		builder.WriteByte(' ')
 	}
-	b.WriteString(entry.Date.Format(PlainTimeFormat))
+
+	builder.WriteString(entry.Date.Format(PlainTimeFormat))
 
 	if entry.File != "" {
-		b.WriteByte(' ')
-		b.WriteString(entry.File)
-		b.WriteByte(':')
-		b.WriteString(strconv.Itoa(entry.Line))
+		builder.WriteByte(' ')
+		builder.WriteString(entry.File)
+		builder.WriteByte(':')
+		builder.WriteString(strconv.Itoa(entry.Line))
 	}
 
-	b.WriteString(": ")
-	b.WriteString(entry.String())
+	builder.WriteString(": ")
+	builder.WriteString(entry.String())
 
-	_ = r.logger.Output(calldepth, b.String())
+	_ = r.logger.Output(calldepth, builder.String())
 }
 
 // outputJSON is a wrapper function to create a log entry in JSON.
@@ -66,36 +68,36 @@ func (r *DefaultLogger) outputJSON(entry *Entry, calldepth int) {
 }
 
 func (r *DefaultLogger) outputSyslog(entry *Entry, calldepth int) {
-	var b strings.Builder
+	var builder strings.Builder
 
-	b.WriteByte('<')
+	builder.WriteByte('<')
 
 	// The syslog facility is calculated using the formula: (facility * 8) + severity
 	// In this case, we're using facility level "LOCAL0".
-	b.WriteString(strconv.FormatInt(int64(16*8+LevelToSyslog[entry.Level]), 10))
-	b.WriteString(">1 ")
-	b.WriteString(entry.Date.Format(SyslogTimeFormat))
+	builder.WriteString(strconv.FormatInt(int64(16*8+LevelToSyslog[entry.Level]), 10))
+	builder.WriteString(">1 ")
+	builder.WriteString(entry.Date.Format(SyslogTimeFormat))
 
 	// Skip HOSTNAME
-	b.WriteString(" - ")
-	b.WriteString(r.appName)
+	builder.WriteString(" - ")
+	builder.WriteString(r.appName)
 
 	// Skip PROCID and MSGID
-	b.WriteString(" - - ")
+	builder.WriteString(" - - ")
 
 	if entry.File != "" {
-		b.WriteString(`[goSDID@32473 file="`)
-		b.WriteString(entry.File)
-		b.WriteString(`" line="`)
-		b.WriteString(strconv.Itoa(entry.Line))
-		b.WriteString(`"] `)
+		builder.WriteString(`[goSDID@32473 file="`)
+		builder.WriteString(entry.File)
+		builder.WriteString(`" line="`)
+		builder.WriteString(strconv.Itoa(entry.Line))
+		builder.WriteString(`"] `)
 	} else {
-		b.WriteString("- ")
+		builder.WriteString("- ")
 	}
 
-	b.WriteString(EscapeSyslogMessage(entry.String()))
+	builder.WriteString(EscapeSyslogMessage(entry.String()))
 
-	_ = r.logger.Output(calldepth, b.String())
+	_ = r.logger.Output(calldepth, builder.String())
 }
 
 // EscapeSyslogMessage escapes special characters in syslog messages
@@ -107,29 +109,32 @@ func EscapeSyslogMessage(msg string) string {
 		"\t", "\\t",
 		"\\", "\\\\",
 	)
+
 	return replacer.Replace(msg)
 }
 
-// LeftPadString appends a left-padded version of s to b, ensuring that the total length is at least n characters.
-func LeftPadString(b *strings.Builder, s string, n int) {
-	if len(s) > n {
-		b.WriteString(s[:n])
+// LeftPadString appends the text to the builder, left-padded with spaces to reach the specified length.
+func LeftPadString(builder *strings.Builder, text string, length int) {
+	if len(text) > length {
+		builder.WriteString(text[:length])
 	} else {
-		b.WriteString(s)
-		for i := len(s); i < n; i++ {
-			b.WriteByte(' ')
+		builder.WriteString(text)
+
+		for i := len(text); i < length; i++ {
+			builder.WriteByte(' ')
 		}
 	}
 }
 
-// RightPadString appends a right-padded version of s to b, ensuring that the total length is at least n characters.
-func RightPadString(b *strings.Builder, s string, n int) {
-	if len(s) > n {
-		b.WriteString(s[:n])
+// RightPadString appends the text to the builder, right-padded with spaces to reach the specified length.
+func RightPadString(builder *strings.Builder, text string, length int) {
+	if len(text) > length {
+		builder.WriteString(text[:length])
 	} else {
-		for i := len(s); i < n; i++ {
-			b.WriteByte(' ')
+		for i := len(text); i < length; i++ {
+			builder.WriteByte(' ')
 		}
-		b.WriteString(s)
+
+		builder.WriteString(text)
 	}
 }

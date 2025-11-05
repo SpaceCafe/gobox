@@ -4,6 +4,8 @@ package logger
 var std Logger = New()
 
 // Default returns the package-level default logger.
+//
+//nolint:ireturn // The default Logger could be overridden.
 func Default() Logger {
 	return std
 }

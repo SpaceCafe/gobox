@@ -38,22 +38,29 @@ var (
 	}
 )
 
-func (r *Format) String() string {
-	return FormatToString[*r]
-}
-
+// MarshalText serializes the Format to a textual representation.
 func (r *Format) MarshalText() ([]byte, error) {
 	return []byte(r.String()), nil
 }
 
+// String returns the string representation of the Format.
+func (r *Format) String() string {
+	return FormatToString[*r]
+}
+
+// UnmarshalText converts a textual representation of the log format into a Format type.
 func (r *Format) UnmarshalText(text []byte) (err error) {
 	*r, err = ParseFormat(string(text))
+
 	return
 }
 
+// ParseFormat converts a string to its corresponding Format type.
+// Returns an error if the format is invalid.
 func ParseFormat(format string) (Format, error) {
 	if v, ok := StringToFormat[format]; ok {
 		return v, nil
 	}
+
 	return PlainFormat, ErrInvalidFormat
 }

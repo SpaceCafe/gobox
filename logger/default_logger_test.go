@@ -1,121 +1,145 @@
-package logger
+package logger_test
 
 import (
 	"bytes"
 	"os"
 	"testing"
 
+	"github.com/spacecafe/gobox/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
-		opts        []Option
-		verify      func(t *testing.T, logger *DefaultLogger)
+		opts        []logger.Option
+		verify      func(t *testing.T, log *logger.DefaultLogger)
 		cleanupFunc func(t *testing.T)
 	}{
 		{
 			name: "default logger",
-			verify: func(t *testing.T, logger *DefaultLogger) {
-				assert.Equal(t, InfoLevel, logger.Level())
-				assert.Equal(t, PlainFormat, logger.Format())
+			verify: func(t *testing.T, log *logger.DefaultLogger) {
+				t.Helper()
+
+				assert.Equal(t, logger.InfoLevel, log.Level())
+				assert.Equal(t, logger.PlainFormat, log.Format())
 			},
 		},
 		{
 			name: "logger with debug level",
-			opts: []Option{
-				WithLevel(DebugLevel),
+			opts: []logger.Option{
+				logger.WithLevel(logger.DebugLevel),
 			},
-			verify: func(t *testing.T, logger *DefaultLogger) {
+			verify: func(t *testing.T, log *logger.DefaultLogger) {
+				t.Helper()
+
 				var buf bytes.Buffer
-				logger.logger.SetOutput(&buf)
-				logger.Debug("test message")
+				log.SetOutput(&buf)
+				log.Debug("test message")
+
 				output := buf.String()
 				assert.Contains(t, output, "DEBUG")
 				assert.Contains(t, output, "test message")
-				assert.Equal(t, DebugLevel, logger.Level())
+				assert.Equal(t, logger.DebugLevel, log.Level())
 			},
 		},
 		{
 			name: "logger with info level",
-			opts: []Option{
-				WithLevel(InfoLevel),
+			opts: []logger.Option{
+				logger.WithLevel(logger.InfoLevel),
 			},
-			verify: func(t *testing.T, logger *DefaultLogger) {
+			verify: func(t *testing.T, log *logger.DefaultLogger) {
+				t.Helper()
+
 				var buf bytes.Buffer
-				logger.logger.SetOutput(&buf)
-				logger.Info("test message")
+				log.SetOutput(&buf)
+				log.Info("test message")
+
 				output := buf.String()
 				assert.Contains(t, output, "INFO")
 				assert.Contains(t, output, "test message")
-				assert.Equal(t, InfoLevel, logger.Level())
+				assert.Equal(t, logger.InfoLevel, log.Level())
 			},
 		},
 		{
 			name: "logger with warn level",
-			opts: []Option{
-				WithLevel(WarnLevel),
+			opts: []logger.Option{
+				logger.WithLevel(logger.WarnLevel),
 			},
-			verify: func(t *testing.T, logger *DefaultLogger) {
+			verify: func(t *testing.T, log *logger.DefaultLogger) {
+				t.Helper()
+
 				var buf bytes.Buffer
-				logger.logger.SetOutput(&buf)
-				logger.Warn("test message")
+				log.SetOutput(&buf)
+				log.Warn("test message")
+
 				output := buf.String()
 				assert.Contains(t, output, "WARN")
 				assert.Contains(t, output, "test message")
-				assert.Equal(t, WarnLevel, logger.Level())
+				assert.Equal(t, logger.WarnLevel, log.Level())
 			},
 		},
 		{
 			name: "logger with error level",
-			opts: []Option{
-				WithLevel(ErrorLevel),
+			opts: []logger.Option{
+				logger.WithLevel(logger.ErrorLevel),
 			},
-			verify: func(t *testing.T, logger *DefaultLogger) {
+			verify: func(t *testing.T, log *logger.DefaultLogger) {
+				t.Helper()
+
 				var buf bytes.Buffer
-				logger.logger.SetOutput(&buf)
-				logger.Error("test message")
+				log.SetOutput(&buf)
+				log.Error("test message")
+
 				output := buf.String()
 				assert.Contains(t, output, "ERROR")
 				assert.Contains(t, output, "test message")
-				assert.Equal(t, ErrorLevel, logger.Level())
+				assert.Equal(t, logger.ErrorLevel, log.Level())
 			},
 		},
 		{
 			name: "logger with fatal level",
-			opts: []Option{
-				WithLevel(FatalLevel),
+			opts: []logger.Option{
+				logger.WithLevel(logger.FatalLevel),
 			},
-			verify: func(t *testing.T, logger *DefaultLogger) {
+			verify: func(t *testing.T, log *logger.DefaultLogger) {
+				t.Helper()
+
 				var exitCode int
-				osExit = func(code int) {
+
+				logger.OsExit = func(code int) {
 					exitCode = code
 				}
+
 				var buf bytes.Buffer
-				logger.logger.SetOutput(&buf)
-				logger.Fatal("test message")
+				log.SetOutput(&buf)
+				log.Fatal("test message") //nolint:revive // OsExit is mocked.
+
 				output := buf.String()
 				assert.Contains(t, output, "FATAL")
 				assert.Contains(t, output, "test message")
-				assert.Equal(t, FatalLevel, logger.Level())
+				assert.Equal(t, logger.FatalLevel, log.Level())
 				assert.Equal(t, 1, exitCode)
 			},
 		},
 		{
 			name: "logger with JSON format",
-			opts: []Option{
-				WithFormat(JSONFormat),
+			opts: []logger.Option{
+				logger.WithFormat(logger.JSONFormat),
 			},
-			verify: func(t *testing.T, logger *DefaultLogger) {
-				var buf bytes.Buffer
-				logger.logger.SetOutput(&buf)
+			verify: func(t *testing.T, log *logger.DefaultLogger) {
+				t.Helper()
 
-				logger.Info("test message")
+				var buf bytes.Buffer
+				log.SetOutput(&buf)
+				log.Info("test message")
+
 				output := buf.String()
 
-				assert.Equal(t, JSONFormat, logger.Format())
+				assert.Equal(t, logger.JSONFormat, log.Format())
 				assert.Contains(t, output, `"level":"info"`)
 				assert.Contains(t, output, `"message":"test message"`)
 
@@ -124,66 +148,81 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "logger with Syslog format",
-			opts: []Option{
-				WithFormat(SyslogFormat),
+			opts: []logger.Option{
+				logger.WithFormat(logger.SyslogFormat),
 			},
-			verify: func(t *testing.T, logger *DefaultLogger) {
+			verify: func(t *testing.T, log *logger.DefaultLogger) {
+				t.Helper()
+
 				var buf bytes.Buffer
-				logger.logger.SetOutput(&buf)
-				logger.Info("test\nmessage")
+				log.SetOutput(&buf)
+				log.Info("test\nmessage")
+
 				output := buf.String()
-				assert.Equal(t, SyslogFormat, logger.Format())
+
+				assert.Equal(t, logger.SyslogFormat, log.Format())
 				assert.Regexp(t, `^<134>1\s.*\s+test\\nmessage\n$`, output)
 			},
 		},
 		{
 			name: "logger with custom output",
-			opts: []Option{
-				WithOutput("test.log"),
+			opts: []logger.Option{
+				logger.WithFileOutput("test.log"),
 			},
-			verify: func(t *testing.T, logger *DefaultLogger) {
-				assert.NotNil(t, logger.logger)
+			verify: func(t *testing.T, _ *logger.DefaultLogger) {
+				t.Helper()
+
+				assert.FileExists(t, "test.log")
 			},
 			cleanupFunc: func(t *testing.T) {
+				t.Helper()
+
 				require.NoError(t, os.Remove("test.log"))
 			},
 		},
 		{
 			name: "logger with invalid level",
-			opts: []Option{
-				WithLevel(Level(999)),
+			opts: []logger.Option{
+				logger.WithLevel(logger.Level(999)),
 			},
-			verify: func(t *testing.T, logger *DefaultLogger) {
-				assert.Equal(t, InfoLevel, logger.Level())
+			verify: func(t *testing.T, log *logger.DefaultLogger) {
+				t.Helper()
+
+				assert.Equal(t, logger.InfoLevel, log.Level())
 			},
 		},
 		{
 			name: "logger with invalid format",
-			opts: []Option{
-				WithFormat(Format(999)),
+			opts: []logger.Option{
+				logger.WithFormat(logger.Format(999)),
 			},
-			verify: func(t *testing.T, logger *DefaultLogger) {
-				assert.Equal(t, PlainFormat, logger.Format())
+			verify: func(t *testing.T, log *logger.DefaultLogger) {
+				t.Helper()
+
+				assert.Equal(t, logger.PlainFormat, log.Format())
 			},
 		},
 		{
 			name: "logger with invalid output path",
-			opts: []Option{
-				WithOutput("/nonexistent/directory/log.txt"),
+			opts: []logger.Option{
+				logger.WithFileOutput("/nonexistent/directory/log.txt"),
 			},
-			verify: func(t *testing.T, logger *DefaultLogger) {
-				assert.NotNil(t, logger)
-				assert.NotNil(t, logger.logger)
+			verify: func(t *testing.T, log *logger.DefaultLogger) {
+				t.Helper()
+
+				assert.NotNil(t, log)
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			if tt.cleanupFunc != nil {
 				defer tt.cleanupFunc(t)
 			}
 
-			got := New(tt.opts...)
+			got := logger.New(tt.opts...)
 			if tt.verify != nil {
 				tt.verify(t, got)
 			}

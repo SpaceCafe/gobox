@@ -69,22 +69,29 @@ var (
 	}
 )
 
-func (r *Level) String() string {
-	return LevelToString[*r]
-}
-
+// MarshalText serializes the Level to a textual representation.
 func (r *Level) MarshalText() ([]byte, error) {
 	return []byte(r.String()), nil
 }
 
+// String returns the string representation of the Level.
+func (r *Level) String() string {
+	return LevelToString[*r]
+}
+
+// UnmarshalText converts a textual representation of the log level into a Level type.
 func (r *Level) UnmarshalText(text []byte) (err error) {
 	*r, err = ParseLevel(string(text))
+
 	return
 }
 
+// ParseLevel converts a string to its corresponding Level type.
+// If the conversion fails, it returns the InfoLevel and an error.
 func ParseLevel(level string) (Level, error) {
 	if v, ok := StringToLevel[level]; ok {
 		return v, nil
 	}
+
 	return InfoLevel, ErrInvalidLevel
 }

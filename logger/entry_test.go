@@ -1,10 +1,11 @@
-package logger
+package logger_test
 
 import (
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/spacecafe/gobox/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,20 +20,22 @@ func (r message) String() string {
 }
 
 func TestItem_Marshal(t *testing.T) {
+	t.Parallel()
+
 	mockDate, err := time.Parse("2006/01/02 15:04:05", "2024/02/05 09:15:30")
 	require.NoError(t, err)
 
 	tests := []struct {
 		name  string
-		entry *Entry
+		entry *logger.Entry
 		want  string
 	}{
 		{
 			"full string",
-			&Entry{
+			&logger.Entry{
 				Date:    mockDate,
 				File:    "example.go",
-				Level:   InfoLevel,
+				Level:   logger.InfoLevel,
 				Message: "Test message",
 				Line:    123,
 			},
@@ -40,14 +43,14 @@ func TestItem_Marshal(t *testing.T) {
 		},
 		{
 			"minimal string",
-			&Entry{
+			&logger.Entry{
 				Date: mockDate,
 			},
 			`{"date":"2024-02-05T09:15:30Z", "level":"debug", "message":""}`,
 		},
 		{
 			"minimal json",
-			&Entry{
+			&logger.Entry{
 				Date: mockDate,
 				Message: message{
 					Text:   "Test message",
@@ -57,30 +60,35 @@ func TestItem_Marshal(t *testing.T) {
 			`{"date":"2024-02-05T09:15:30Z", "level":"debug", "message":{"text":"Test message", "number":123456}}`,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := tt.entry.Marshal()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.JSONEq(t, tt.want, string(got))
 		})
 	}
 }
 
 func TestItem_String(t *testing.T) {
+	t.Parallel()
+
 	mockDate, err := time.Parse("2006/01/02 15:04:05", "2024/02/05 09:15:30")
 	require.NoError(t, err)
 
 	tests := []struct {
 		name  string
-		entry *Entry
+		entry *logger.Entry
 		want  string
 	}{
 		{
 			"full text",
-			&Entry{
+			&logger.Entry{
 				Date:    mockDate,
 				File:    "example.go",
-				Level:   DebugLevel,
+				Level:   logger.DebugLevel,
 				Message: "Test message",
 				Line:    123,
 			},
@@ -88,14 +96,14 @@ func TestItem_String(t *testing.T) {
 		},
 		{
 			"minimal text",
-			&Entry{
+			&logger.Entry{
 				Date: mockDate,
 			},
 			"",
 		},
 		{
 			"minimal json",
-			&Entry{
+			&logger.Entry{
 				Date: mockDate,
 				Message: message{
 					Text:   "Test message",
@@ -105,8 +113,11 @@ func TestItem_String(t *testing.T) {
 			"Test message123456",
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			assert.Equal(t, tt.want, tt.entry.String())
 		})
 	}
