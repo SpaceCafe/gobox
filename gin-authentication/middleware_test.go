@@ -1,4 +1,4 @@
-package authentication
+package authentication_test
 
 import (
 	"net/http"
@@ -8,15 +8,29 @@ import (
 
 	"github.com/gin-gonic/gin"
 	jwt2 "github.com/golang-jwt/jwt/v5"
+	authentication "github.com/spacecafe/gobox/gin-authentication"
 	"github.com/spacecafe/gobox/gin-authentication/jwt"
 	problems "github.com/spacecafe/gobox/gin-problems"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+type MockPrincipal struct {
+	id   string
+	name string
+}
+
+func (r *MockPrincipal) ID() string {
+	return r.id
+}
+
+func (r *MockPrincipal) Name() string {
+	return r.name
+}
+
 // setupTestConfig creates a test configuration with all necessary defaults.
-func setupTestConfig() *Config {
-	cfg := &Config{
+func setupTestConfig() *authentication.Config {
+	cfg := &authentication.Config{
 		Tokens:     []string{"valid-token", "another-token"},
 		Principals: map[string]string{"user1": "password1", "user2": "password2"},
 		JWT: &jwt.Config{
@@ -31,40 +45,48 @@ func setupTestConfig() *Config {
 			RefreshTokenTTL:   time.Hour,
 		},
 	}
-	cfg.Repository = NewConfigRepository(cfg)
+	cfg.Repository = authentication.NewConfigRepository(cfg)
+
 	return cfg
 }
 
 // createValidJWT creates a valid JWT token for testing.
-func createValidJWT(cfg *Config, subject string) string {
+func createValidJWT(cfg *authentication.Config, subject string) string {
 	claims := jwt.NewClaims(subject)
 	claims.IdentityClaims.Name = "Test User"
 	token := jwt.New(cfg.JWT, claims, jwt.AccessToken)
 	signedToken, _ := token.SignedString()
+
 	return signedToken
 }
 
 // testHandler is a simple handler that returns 200 OK with the principal ID.
-func testHandler(c *gin.Context) {
-	principal, ok := PrincipalFromContext(c)
+func testHandler(ctx *gin.Context) {
+	principal, ok := authentication.PrincipalFromContext(ctx)
 	if ok {
-		c.JSON(http.StatusOK, gin.H{"principal_id": principal.ID(), "principal_name": principal.Name()})
+		ctx.JSON(
+			http.StatusOK,
+			gin.H{"principal_id": principal.ID(), "principal_name": principal.Name()},
+		)
 	} else {
-		c.JSON(http.StatusOK, gin.H{"message": "no principal"})
+		ctx.JSON(http.StatusOK, gin.H{"message": "no principal"})
 	}
 }
 
 func TestNew_BearerAuthenticator(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
 	tests := []struct {
 		name              string
-		setupHeader       func(*Config) string
+		setupHeader       func(*authentication.Config) string
 		expectedStatus    int
 		expectedPrincipal bool
 		expectedWWWAuth   string
 	}{
 		{
 			name: "valid bearer token",
-			setupHeader: func(cfg *Config) string {
+			setupHeader: func(cfg *authentication.Config) string {
 				return "Bearer " + createValidJWT(cfg, "test-user")
 			},
 			expectedStatus:    http.StatusOK,
@@ -72,33 +94,33 @@ func TestNew_BearerAuthenticator(t *testing.T) {
 		},
 		{
 			name:              "empty bearer token",
-			setupHeader:       func(cfg *Config) string { return "Bearer " },
+			setupHeader:       func(_ *authentication.Config) string { return "Bearer " },
 			expectedStatus:    http.StatusUnauthorized,
 			expectedPrincipal: false,
 			expectedWWWAuth:   "Bearer",
 		},
 		{
 			name:              "invalid bearer token",
-			setupHeader:       func(cfg *Config) string { return "Bearer invalid-token" },
+			setupHeader:       func(_ *authentication.Config) string { return "Bearer invalid-token" },
 			expectedStatus:    http.StatusUnauthorized,
 			expectedPrincipal: false,
 			expectedWWWAuth:   "Bearer",
 		},
 		{
 			name:              "missing bearer prefix",
-			setupHeader:       func(cfg *Config) string { return "invalid-token" },
+			setupHeader:       func(_ *authentication.Config) string { return "invalid-token" },
 			expectedStatus:    http.StatusUnauthorized,
 			expectedPrincipal: false,
 		},
 		{
 			name:              "no authorization header",
-			setupHeader:       func(cfg *Config) string { return "" },
+			setupHeader:       func(_ *authentication.Config) string { return "" },
 			expectedStatus:    http.StatusUnauthorized,
 			expectedPrincipal: false,
 		},
 		{
 			name:              "case insensitive bearer",
-			setupHeader:       func(cfg *Config) string { return "BEARER " + createValidJWT(cfg, "test-user") },
+			setupHeader:       func(cfg *authentication.Config) string { return "BEARER " + createValidJWT(cfg, "test-user") },
 			expectedStatus:    http.StatusOK,
 			expectedPrincipal: true,
 		},
@@ -106,44 +128,54 @@ func TestNew_BearerAuthenticator(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
+			t.Parallel()
+
 			cfg := setupTestConfig()
-			cfg.Authenticators = []Authenticator{NewBearerAuthenticator(cfg)}
+			cfg.Authenticators = []authentication.Authenticator{
+				authentication.NewBearerAuthenticator(cfg),
+			}
 
-			r := gin.New()
-			r.Use(problems.New())
-			r.Use(New(cfg))
-			r.GET("/", testHandler)
+			router := gin.New()
+			router.Use(problems.New())
+			router.Use(authentication.New(cfg))
+			router.GET("/", testHandler)
 
-			req := httptest.NewRequest("GET", "/", http.NoBody)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
+
 			header := tt.setupHeader(cfg)
 			if header != "" {
 				req.Header.Set("Authorization", header)
 			}
-			w := httptest.NewRecorder()
 
-			r.ServeHTTP(w, req)
+			response := httptest.NewRecorder()
 
-			assert.Equal(t, tt.expectedStatus, w.Code)
+			router.ServeHTTP(response, req)
+
+			assert.Equal(t, tt.expectedStatus, response.Code)
+
 			if tt.expectedWWWAuth != "" {
-				assert.Equal(t, tt.expectedWWWAuth, w.Header().Get("WWW-Authenticate"))
+				assert.Equal(t, tt.expectedWWWAuth, response.Header().Get("WWW-Authenticate"))
 			}
 		})
 	}
 }
 
 func TestNew_JWTAuthenticator(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
 	tests := []struct {
 		name              string
-		setupCookie       func(*Config) *http.Cookie
+		setupCookie       func(*authentication.Config) *http.Cookie
 		expectedStatus    int
 		expectedPrincipal bool
 		expectedWWWAuth   string
 	}{
 		{
 			name: "valid jwt cookie",
-			setupCookie: func(cfg *Config) *http.Cookie {
+			setupCookie: func(cfg *authentication.Config) *http.Cookie {
 				token := createValidJWT(cfg, "test-user")
+
 				return &http.Cookie{
 					Name:  cfg.JWT.CookieName,
 					Value: token,
@@ -154,7 +186,7 @@ func TestNew_JWTAuthenticator(t *testing.T) {
 		},
 		{
 			name: "invalid jwt cookie",
-			setupCookie: func(cfg *Config) *http.Cookie {
+			setupCookie: func(cfg *authentication.Config) *http.Cookie {
 				return &http.Cookie{
 					Name:  cfg.JWT.CookieName,
 					Value: "invalid-token",
@@ -166,7 +198,7 @@ func TestNew_JWTAuthenticator(t *testing.T) {
 		},
 		{
 			name: "missing cookie",
-			setupCookie: func(cfg *Config) *http.Cookie {
+			setupCookie: func(_ *authentication.Config) *http.Cookie {
 				return nil
 			},
 			expectedStatus:    http.StatusUnauthorized,
@@ -175,8 +207,9 @@ func TestNew_JWTAuthenticator(t *testing.T) {
 		},
 		{
 			name: "wrong cookie name",
-			setupCookie: func(cfg *Config) *http.Cookie {
+			setupCookie: func(cfg *authentication.Config) *http.Cookie {
 				token := createValidJWT(cfg, "test-user")
+
 				return &http.Cookie{
 					Name:  "wrong-cookie-name",
 					Value: token,
@@ -190,33 +223,42 @@ func TestNew_JWTAuthenticator(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
+			t.Parallel()
+
 			cfg := setupTestConfig()
-			cfg.Authenticators = []Authenticator{NewJWTAuthenticator(cfg)}
+			cfg.Authenticators = []authentication.Authenticator{
+				authentication.NewJWTAuthenticator(cfg),
+			}
 
-			r := gin.New()
-			r.Use(problems.New())
-			r.Use(New(cfg))
-			r.GET("/", testHandler)
+			router := gin.New()
+			router.Use(problems.New())
+			router.Use(authentication.New(cfg))
+			router.GET("/", testHandler)
 
-			req := httptest.NewRequest("GET", "/", http.NoBody)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
+
 			cookie := tt.setupCookie(cfg)
 			if cookie != nil {
 				req.AddCookie(cookie)
 			}
-			w := httptest.NewRecorder()
 
-			r.ServeHTTP(w, req)
+			response := httptest.NewRecorder()
 
-			assert.Equal(t, tt.expectedStatus, w.Code)
+			router.ServeHTTP(response, req)
+
+			assert.Equal(t, tt.expectedStatus, response.Code)
+
 			if tt.expectedWWWAuth != "" {
-				assert.Equal(t, tt.expectedWWWAuth, w.Header().Get("WWW-Authenticate"))
+				assert.Equal(t, tt.expectedWWWAuth, response.Header().Get("WWW-Authenticate"))
 			}
 		})
 	}
 }
 
 func TestNew_TokenAuthenticator(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
 	tests := []struct {
 		name              string
 		authHeader        string
@@ -271,32 +313,40 @@ func TestNew_TokenAuthenticator(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
+			t.Parallel()
+
 			cfg := setupTestConfig()
-			cfg.Authenticators = []Authenticator{NewTokenAuthenticator(cfg)}
+			cfg.Authenticators = []authentication.Authenticator{
+				authentication.NewTokenAuthenticator(cfg),
+			}
 
-			r := gin.New()
-			r.Use(problems.New())
-			r.Use(New(cfg))
-			r.GET("/", testHandler)
+			router := gin.New()
+			router.Use(problems.New())
+			router.Use(authentication.New(cfg))
+			router.GET("/", testHandler)
 
-			req := httptest.NewRequest("GET", "/", http.NoBody)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 			if tt.authHeader != "" {
 				req.Header.Set("Authorization", tt.authHeader)
 			}
-			w := httptest.NewRecorder()
 
-			r.ServeHTTP(w, req)
+			response := httptest.NewRecorder()
 
-			assert.Equal(t, tt.expectedStatus, w.Code)
+			router.ServeHTTP(response, req)
+
+			assert.Equal(t, tt.expectedStatus, response.Code)
+
 			if tt.expectedWWWAuth != "" {
-				assert.Equal(t, tt.expectedWWWAuth, w.Header().Get("WWW-Authenticate"))
+				assert.Equal(t, tt.expectedWWWAuth, response.Header().Get("WWW-Authenticate"))
 			}
 		})
 	}
 }
 
 func TestNew_BasicAuthenticator(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
 	tests := []struct {
 		name              string
 		username          string
@@ -351,42 +401,50 @@ func TestNew_BasicAuthenticator(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
+			t.Parallel()
+
 			cfg := setupTestConfig()
-			cfg.Authenticators = []Authenticator{NewBasicAuthenticator(cfg)}
+			cfg.Authenticators = []authentication.Authenticator{
+				authentication.NewBasicAuthenticator(cfg),
+			}
 
-			r := gin.New()
-			r.Use(problems.New())
-			r.Use(New(cfg))
-			r.GET("/", testHandler)
+			router := gin.New()
+			router.Use(problems.New())
+			router.Use(authentication.New(cfg))
+			router.GET("/", testHandler)
 
-			req := httptest.NewRequest("GET", "/", http.NoBody)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 			if tt.setAuth {
 				req.SetBasicAuth(tt.username, tt.password)
 			}
-			w := httptest.NewRecorder()
 
-			r.ServeHTTP(w, req)
+			response := httptest.NewRecorder()
 
-			assert.Equal(t, tt.expectedStatus, w.Code)
+			router.ServeHTTP(response, req)
+
+			assert.Equal(t, tt.expectedStatus, response.Code)
+
 			if tt.expectedWWWAuth != "" {
-				assert.Equal(t, tt.expectedWWWAuth, w.Header().Get("WWW-Authenticate"))
+				assert.Equal(t, tt.expectedWWWAuth, response.Header().Get("WWW-Authenticate"))
 			}
 		})
 	}
 }
 
 func TestNew_MultipleAuthenticators(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
 	tests := []struct {
 		name              string
-		setupRequest      func(*Config, *http.Request)
+		setupRequest      func(*authentication.Config, *http.Request)
 		expectedStatus    int
 		expectedPrincipal bool
 		description       string
 	}{
 		{
 			name: "bearer succeeds first",
-			setupRequest: func(cfg *Config, req *http.Request) {
+			setupRequest: func(cfg *authentication.Config, req *http.Request) {
 				token := createValidJWT(cfg, "jwt-user")
 				req.Header.Set("Authorization", "Bearer "+token)
 			},
@@ -396,7 +454,7 @@ func TestNew_MultipleAuthenticators(t *testing.T) {
 		},
 		{
 			name: "token succeeds when bearer not present",
-			setupRequest: func(cfg *Config, req *http.Request) {
+			setupRequest: func(_ *authentication.Config, req *http.Request) {
 				req.Header.Set("Authorization", "Token valid-token")
 			},
 			expectedStatus:    http.StatusOK,
@@ -405,7 +463,7 @@ func TestNew_MultipleAuthenticators(t *testing.T) {
 		},
 		{
 			name: "basic succeeds when others not present",
-			setupRequest: func(cfg *Config, req *http.Request) {
+			setupRequest: func(_ *authentication.Config, req *http.Request) {
 				req.SetBasicAuth("user1", "password1")
 			},
 			expectedStatus:    http.StatusOK,
@@ -414,7 +472,7 @@ func TestNew_MultipleAuthenticators(t *testing.T) {
 		},
 		{
 			name: "jwt cookie succeeds when authorization header is token",
-			setupRequest: func(cfg *Config, req *http.Request) {
+			setupRequest: func(cfg *authentication.Config, req *http.Request) {
 				token := createValidJWT(cfg, "jwt-user")
 				req.AddCookie(&http.Cookie{
 					Name:  cfg.JWT.CookieName,
@@ -427,7 +485,7 @@ func TestNew_MultipleAuthenticators(t *testing.T) {
 		},
 		{
 			name: "all methods invalid",
-			setupRequest: func(cfg *Config, req *http.Request) {
+			setupRequest: func(_ *authentication.Config, _ *http.Request) {
 				// Don't set any valid auth
 			},
 			expectedStatus:    http.StatusUnauthorized,
@@ -438,32 +496,37 @@ func TestNew_MultipleAuthenticators(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
+			t.Parallel()
+
 			cfg := setupTestConfig()
-			cfg.Authenticators = []Authenticator{
-				NewBearerAuthenticator(cfg),
-				NewJWTAuthenticator(cfg),
-				NewTokenAuthenticator(cfg),
-				NewBasicAuthenticator(cfg),
+			cfg.Authenticators = []authentication.Authenticator{
+				authentication.NewBearerAuthenticator(cfg),
+				authentication.NewJWTAuthenticator(cfg),
+				authentication.NewTokenAuthenticator(cfg),
+				authentication.NewBasicAuthenticator(cfg),
 			}
 
-			r := gin.New()
-			r.Use(problems.New())
-			r.Use(New(cfg))
-			r.GET("/", testHandler)
+			router := gin.New()
+			router.Use(problems.New())
+			router.Use(authentication.New(cfg))
+			router.GET("/", testHandler)
 
-			req := httptest.NewRequest("GET", "/", http.NoBody)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 			tt.setupRequest(cfg, req)
-			w := httptest.NewRecorder()
 
-			r.ServeHTTP(w, req)
+			response := httptest.NewRecorder()
 
-			assert.Equal(t, tt.expectedStatus, w.Code, tt.description)
+			router.ServeHTTP(response, req)
+
+			assert.Equal(t, tt.expectedStatus, response.Code, tt.description)
 		})
 	}
 }
 
 func TestPrincipalFromContext(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
 	tests := []struct {
 		name         string
 		setupContext func(*gin.Context)
@@ -472,15 +535,18 @@ func TestPrincipalFromContext(t *testing.T) {
 	}{
 		{
 			name: "principal exists in context",
-			setupContext: func(c *gin.Context) {
-				c.Set(PrincipalContextKey, &DefaultPrincipal{id: "test-id", name: "Test User"})
+			setupContext: func(ctx *gin.Context) {
+				ctx.Set(authentication.PrincipalContextKey, &MockPrincipal{
+					id:   "test-id",
+					name: "Test User",
+				})
 			},
 			expectOk: true,
 			expectID: "test-id",
 		},
 		{
 			name: "principal does not exist in context",
-			setupContext: func(c *gin.Context) {
+			setupContext: func(_ *gin.Context) {
 				// Don't set anything
 			},
 			expectOk: false,
@@ -488,7 +554,7 @@ func TestPrincipalFromContext(t *testing.T) {
 		{
 			name: "wrong type in context",
 			setupContext: func(c *gin.Context) {
-				c.Set(PrincipalContextKey, "not-a-principal")
+				c.Set(authentication.PrincipalContextKey, "not-a-principal")
 			},
 			expectOk: false,
 		},
@@ -496,13 +562,14 @@ func TestPrincipalFromContext(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
+			t.Parallel()
+
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
 			tt.setupContext(c)
 
-			principal, ok := PrincipalFromContext(c)
+			principal, ok := authentication.PrincipalFromContext(c)
 			assert.Equal(t, tt.expectOk, ok)
 
 			if tt.expectOk {
@@ -516,32 +583,39 @@ func TestPrincipalFromContext(t *testing.T) {
 }
 
 func TestNew_PrincipalSetInContext(t *testing.T) {
+	t.Parallel()
 	gin.SetMode(gin.TestMode)
-	cfg := setupTestConfig()
-	cfg.Authenticators = []Authenticator{NewTokenAuthenticator(cfg)}
 
-	r := gin.New()
-	r.Use(problems.New())
-	r.Use(New(cfg))
-	r.GET("/", func(c *gin.Context) {
-		principal, ok := PrincipalFromContext(c)
+	cfg := setupTestConfig()
+	cfg.Authenticators = []authentication.Authenticator{
+		authentication.NewTokenAuthenticator(cfg),
+	}
+
+	router := gin.New()
+	router.Use(problems.New())
+	router.Use(authentication.New(cfg))
+	router.GET("/", func(ctx *gin.Context) {
+		principal, ok := authentication.PrincipalFromContext(ctx)
 		require.True(t, ok, "principal should be set in context")
 		require.NotNil(t, principal, "principal should not be nil")
 		assert.Equal(t, "token", principal.ID())
 		assert.Equal(t, "token", principal.Name())
-		c.JSON(http.StatusOK, gin.H{"success": true})
+		ctx.JSON(http.StatusOK, gin.H{"success": true})
 	})
 
-	req := httptest.NewRequest("GET", "/", http.NoBody)
+	req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 	req.Header.Set("Authorization", "Token valid-token")
-	w := httptest.NewRecorder()
 
-	r.ServeHTTP(w, req)
+	response := httptest.NewRecorder()
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	router.ServeHTTP(response, req)
+
+	assert.Equal(t, http.StatusOK, response.Code)
 }
 
 func TestToken_Renew(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name      string
 		tokenType jwt.TokenType
@@ -561,6 +635,8 @@ func TestToken_Renew(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			cfg := setupTestConfig()
 			claims := jwt.NewClaims("test-user")
 			claims.IdentityClaims.Name = "Test User"

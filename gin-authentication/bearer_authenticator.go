@@ -25,21 +25,6 @@ func NewBearerAuthenticator(cfg *Config) *BearerAuthenticator {
 	}
 }
 
-// Authenticate authenticates a request using the given context.
-func (r *BearerAuthenticator) Authenticate(ctx *gin.Context) (Principal, error) {
-	const prefix = "Bearer "
-	auth := ctx.Request.Header.Get("Authorization")
-	if !hasCaseInsensitivePrefix(auth, prefix) {
-		return nil, ErrInvalidMethod
-	}
-
-	token, err := jwt.NewFromString(r.cfg.JWT, auth[len(prefix):], jwt.AccessToken)
-	if err != nil {
-		return nil, problems.ProblemJWTInvalid.WithError(err)
-	}
-	return token.Claims(), nil
-}
-
 // Abort aborts the request with a 401 Unauthorized response and a WWW-Authenticate header.
 func (r *BearerAuthenticator) Abort(ctx *gin.Context) {
 	ctx.Header("WWW-Authenticate", "Bearer")
@@ -53,4 +38,23 @@ func (r *BearerAuthenticator) Abort(ctx *gin.Context) {
 	}
 
 	problems.ProblemJWTMissing.Abort(ctx)
+}
+
+// Authenticate authenticates a request using the given context.
+//
+//nolint:ireturn // Principal is implemented by the repository.
+func (r *BearerAuthenticator) Authenticate(ctx *gin.Context) (Principal, error) {
+	const prefix = "Bearer "
+
+	auth := ctx.Request.Header.Get("Authorization")
+	if !hasCaseInsensitivePrefix(auth, prefix) {
+		return nil, ErrInvalidMethod
+	}
+
+	token, err := jwt.NewFromString(r.cfg.JWT, auth[len(prefix):], jwt.AccessToken)
+	if err != nil {
+		return nil, problems.ProblemJWTInvalid.WithError(err)
+	}
+
+	return token.Claims(), nil
 }

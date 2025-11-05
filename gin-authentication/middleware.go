@@ -19,6 +19,7 @@ func New(cfg *Config) gin.HandlerFunc {
 			if err == nil && principal != nil {
 				ctx.Set(PrincipalContextKey, principal)
 				ctx.Next()
+
 				return
 			}
 
@@ -27,6 +28,7 @@ func New(cfg *Config) gin.HandlerFunc {
 			}
 
 			_ = ctx.Error(err)
+
 			break
 		}
 
@@ -36,11 +38,15 @@ func New(cfg *Config) gin.HandlerFunc {
 
 // PrincipalFromContext retrieves the Principal from the given Gin context if it exists.
 // It returns the Principal and a boolean indicating whether the retrieval was successful.
+//
+//nolint:ireturn // Principal is implemented by the repository.
 func PrincipalFromContext(ctx *gin.Context) (Principal, bool) {
 	value, ok := ctx.Get(PrincipalContextKey)
 	if !ok {
 		return nil, false
 	}
+
 	principal, ok := value.(Principal)
+
 	return principal, ok
 }

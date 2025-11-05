@@ -10,6 +10,11 @@ type CookieSameSite struct {
 	http.SameSite
 }
 
+// MarshalText converts the CookieSameSite value to a byte slice.
+func (r *CookieSameSite) MarshalText() ([]byte, error) {
+	return []byte(r.String()), nil
+}
+
 // String returns the string representation of the CookieSameSite value.
 func (r *CookieSameSite) String() string {
 	switch r.SameSite {
@@ -19,14 +24,11 @@ func (r *CookieSameSite) String() string {
 		return "strict"
 	case http.SameSiteNoneMode:
 		return "none"
+	case http.SameSiteDefaultMode:
+		return ""
 	default:
 		return ""
 	}
-}
-
-// MarshalText converts the CookieSameSite value to a byte slice.
-func (r *CookieSameSite) MarshalText() ([]byte, error) {
-	return []byte(r.String()), nil
 }
 
 // UnmarshalText converts the byte slice to a CookieSameSite value.
@@ -41,5 +43,6 @@ func (r *CookieSameSite) UnmarshalText(text []byte) error {
 	default:
 		return ErrInvalidCookieSameSite
 	}
+
 	return nil
 }

@@ -1,8 +1,6 @@
 package authentication
 
-var (
-	_ Repository = (*ConfigRepository)(nil)
-)
+var _ Repository = (*ConfigRepository)(nil)
 
 // ConfigRepository implements the Repository interface using a Config object.
 type ConfigRepository struct {
@@ -14,23 +12,32 @@ func NewConfigRepository(cfg *Config) *ConfigRepository {
 	return &ConfigRepository{cfg: cfg}
 }
 
-// GetByToken retrieves a principal by token.
-func (r *ConfigRepository) GetByToken(token string) (Principal, error) {
-	for i := range r.cfg.Tokens {
-		if err := CompareSecrets(r.cfg.Tokens[i], token); err == nil {
-			return tokenPrincipal, nil
+// GetByCredentials retrieves a principal by credentials.
+//
+//nolint:ireturn // Principal is implemented by the repository.
+func (r *ConfigRepository) GetByCredentials(id, password string) (Principal, error) {
+	if passwd, ok := r.cfg.Principals[id]; ok {
+		err := CompareSecrets(passwd, password)
+		if err != nil {
+			return nil, err
 		}
+
+		return &DefaultPrincipal{id: id, name: id}, nil
 	}
+
 	return nil, ErrPrincipalNotFound
 }
 
-// GetByCredentials retrieves a principal by credentials.
-func (r *ConfigRepository) GetByCredentials(id, password string) (Principal, error) {
-	if passwd, ok := r.cfg.Principals[id]; ok {
-		if err := CompareSecrets(passwd, password); err != nil {
-			return nil, err
+// GetByToken retrieves a principal by token.
+//
+//nolint:ireturn // Principal is implemented by the repository.
+func (r *ConfigRepository) GetByToken(token string) (Principal, error) {
+	for i := range r.cfg.Tokens {
+		err := CompareSecrets(r.cfg.Tokens[i], token)
+		if err == nil {
+			return tokenPrincipal, nil
 		}
-		return &DefaultPrincipal{id: id, name: id}, nil
 	}
+
 	return nil, ErrPrincipalNotFound
 }

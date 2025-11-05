@@ -25,20 +25,6 @@ func NewJWTAuthenticator(cfg *Config) *JWTAuthenticator {
 	}
 }
 
-// Authenticate authenticates a request using the given context.
-func (r *JWTAuthenticator) Authenticate(ctx *gin.Context) (Principal, error) {
-	cookie, err := ctx.Request.Cookie(r.cfg.JWT.CookieName)
-	if err != nil {
-		return nil, ErrInvalidMethod
-	}
-
-	token, err := jwt.NewFromString(r.cfg.JWT, cookie.Value, jwt.AccessToken)
-	if err != nil {
-		return nil, problems.ProblemJWTInvalid.WithError(err)
-	}
-	return token.Claims(), nil
-}
-
 // Abort aborts the request with a 401 Unauthorized response and a WWW-Authenticate header.
 func (r *JWTAuthenticator) Abort(ctx *gin.Context) {
 	ctx.Header("WWW-Authenticate", "JWT")
@@ -52,4 +38,21 @@ func (r *JWTAuthenticator) Abort(ctx *gin.Context) {
 	}
 
 	problems.ProblemJWTMissing.Abort(ctx)
+}
+
+// Authenticate authenticates a request using the given context.
+//
+//nolint:ireturn // Principal is implemented by the repository.
+func (r *JWTAuthenticator) Authenticate(ctx *gin.Context) (Principal, error) {
+	cookie, err := ctx.Request.Cookie(r.cfg.JWT.CookieName)
+	if err != nil {
+		return nil, ErrInvalidMethod
+	}
+
+	token, err := jwt.NewFromString(r.cfg.JWT, cookie.Value, jwt.AccessToken)
+	if err != nil {
+		return nil, problems.ProblemJWTInvalid.WithError(err)
+	}
+
+	return token.Claims(), nil
 }

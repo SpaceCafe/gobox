@@ -34,6 +34,8 @@ github.com/golang-jwt/jwt/v5 v5.3.0/go.mod h1:fxCRLWMO43lRc8nhHWY6LGqRcf+1gQWArs
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
 github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
+github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/klauspost/cpuid/v2 v2.3.0 h1:S4CRMLnYUhGeDFDqkGriYKdfoFlDnMtqTiI/sFzhA9Y=
@@ -61,8 +63,6 @@ github.com/spacecafe/gobox/config v0.0.0-20251028094851-e45d7f69d144 h1:laZL8l1E
 github.com/spacecafe/gobox/config v0.0.0-20251028094851-e45d7f69d144/go.mod h1:46jtuOpUINEMQeMg2OShf+7hNH/kNmadenhOLRG+osU=
 github.com/spacecafe/gobox/gin-problems v0.0.0-20251028094851-e45d7f69d144 h1:xy2gxGjNt+77hlBFxRBv83dWBbt50U83RYuI+rTNJ+U=
 github.com/spacecafe/gobox/gin-problems v0.0.0-20251028094851-e45d7f69d144/go.mod h1:H/crKOoQujRe2bNsYjUgWkhH9w0Pt2iST3YSNVwNMc8=
-github.com/spacecafe/gobox/logger v0.0.0-20251022124349-b4b23f362d45 h1:foth3AOTcGkVtDe3uP5QLYSdxRoNC/Bgvn9sKpspcRY=
-github.com/spacecafe/gobox/logger v0.0.0-20251022124349-b4b23f362d45/go.mod h1:p9yozVcNy4T1FS5zc1T1iTX5HZTZw/l0TowWeDrgW38=
 github.com/spacecafe/gobox/logger v0.0.0-20251028094851-e45d7f69d144 h1:4PCp9sAu/nhWMzBxWUCjhu8LERdkgkbl6xNxAGY7fyI=
 github.com/spacecafe/gobox/logger v0.0.0-20251028094851-e45d7f69d144/go.mod h1:p9yozVcNy4T1FS5zc1T1iTX5HZTZw/l0TowWeDrgW38=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

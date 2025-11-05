@@ -7,10 +7,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	//nolint:gochecknoglobals // Maintain a set of predefined bcrypt prefixes that are used throughout the application.
-	BcryptHashPrefixes = []string{"$2a$", "$2b$", "$2x$", "$2y$"}
-)
+//nolint:gochecknoglobals // Maintain a set of predefined bcrypt prefixes that are used throughout the application.
+var BcryptHashPrefixes = []string{"$2a$", "$2b$", "$2x$", "$2y$"}
 
 // CompareSecrets compares two secrets (passwords or hashes) for equality.
 // It handles both plain text and bcrypt hashed secrets.
@@ -35,5 +33,6 @@ func comparePasswords(expected, actual []byte) error {
 	if subtle.ConstantTimeCompare(expected, actual) == 1 {
 		return nil
 	}
+
 	return ErrSecretsNotEqual
 }

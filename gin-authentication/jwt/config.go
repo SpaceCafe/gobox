@@ -3,6 +3,7 @@ package jwt
 import (
 	"net/http"
 	"regexp"
+	"slices"
 	"time"
 
 	jwt2 "github.com/golang-jwt/jwt/v5"
@@ -18,38 +19,38 @@ var (
 // Config holds configuration related to JWT.
 type Config struct {
 	// Secret as a base64 encoded string (RFC 4648) is used to generate and validate access tokens.
-	Secret Secret `json:"secret" yaml:"secret" mapstructure:"secret"`
+	Secret Secret `json:"secret" mapstructure:"secret" yaml:"secret"`
 
 	// RefreshSecret as a base64 encoded string (RFC 4648) is used to generate and validate refresh tokens.
-	RefreshSecret Secret `json:"refresh_secret" yaml:"refresh_secret" mapstructure:"refresh_secret"`
+	RefreshSecret Secret `json:"refreshSecret" mapstructure:"refresh-secret" yaml:"refreshSecret"`
 
 	// Audience is the intended recipient of the token.
 	// It is usually a list of URLs of the services that can consume the token.
 	// Example: https://api.example.com
-	Audience []string `json:"audience" yaml:"audience" mapstructure:"audience"`
+	Audience []string `json:"audience" mapstructure:"audience" yaml:"audience"`
 
 	// Issuer is the entity that issues the token.
 	// It is usually the URL of the authorization server.
 	// Example: https://auth.example.com
-	Issuer string `json:"issuer" yaml:"issuer" mapstructure:"issuer"`
+	Issuer string `json:"issuer" mapstructure:"issuer" yaml:"issuer"`
 
 	// CookieName is the name of the cookie that stores the access token.
-	CookieName string `json:"cookie_name" yaml:"cookie_name" mapstructure:"cookie_name"`
+	CookieName string `json:"cookieName" mapstructure:"cookie-name" yaml:"cookieName"`
 
 	// CookieSameSite is the same site attribute of the cookie. Possible values are "Strict", "Lax" or "None".
-	CookieSameSite CookieSameSite `json:"cookie_same_site" yaml:"cookie_same_site" mapstructure:"cookie_same_site"`
+	CookieSameSite CookieSameSite `json:"cookieSameSite" mapstructure:"cookie-same-site" yaml:"cookieSameSite"`
 
 	// RefreshCookieName is the name of the cookie that stores the refresh token.
-	RefreshCookieName string `json:"refresh_cookie_name" yaml:"refresh_cookie_name" mapstructure:"refresh_cookie_name"`
+	RefreshCookieName string `json:"refreshCookieName" mapstructure:"refresh-cookie-name" yaml:"refreshCookieName"`
 
 	// Signer is a function that returns a new SigningMethod to be used for signing JWT.
 	Signer jwt2.SigningMethod
 
 	// AccessTokenTTL is the duration for which the access token is valid.
-	AccessTokenTTL time.Duration `json:"access_token_ttl" yaml:"access_token_ttl" mapstructure:"access_token_ttl"`
+	AccessTokenTTL time.Duration `json:"accessTokenTTL" mapstructure:"access-token-ttl" yaml:"accessTokenTTL"`
 
 	// RefreshTokenTTL is the duration for which the refresh token is valid.
-	RefreshTokenTTL time.Duration `json:"refresh_token_ttl" yaml:"refresh_token_ttl" mapstructure:"refresh_token_ttl"`
+	RefreshTokenTTL time.Duration `json:"refreshTokenTTL" mapstructure:"refresh-token-ttl" yaml:"refreshTokenTTL"`
 }
 
 // SetDefaults initializes the default values for the relevant fields in the struct.
@@ -77,10 +78,9 @@ func (r *Config) Validate() error {
 	if len(r.Audience) == 0 {
 		return ErrInvalidAudiences
 	}
-	for i := range r.Audience {
-		if r.Audience[i] == "" {
-			return ErrInvalidAudiences
-		}
+
+	if slices.Contains(r.Audience, "") {
+		return ErrInvalidAudiences
 	}
 
 	if r.Issuer == "" {

@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -19,6 +20,7 @@ const (
 // Token represents a JSON Web Token with additional signed string representation.
 type Token struct {
 	*jwt2.Token
+
 	cfg       *Config
 	tokenType TokenType
 }
@@ -50,6 +52,7 @@ func NewFromString(cfg *Config, signedToken string, tokenType TokenType) (*Token
 		tokenType: tokenType,
 	}
 	secret := token.secret()
+
 	token.Token, err = jwt2.ParseWithClaims(
 		signedToken,
 		&Claims{},
@@ -57,13 +60,14 @@ func NewFromString(cfg *Config, signedToken string, tokenType TokenType) (*Token
 			if t.Method.Alg() != cfg.Signer.Alg() {
 				return nil, ErrSignerUnequal
 			}
+
 			return secret, nil
 		},
 	)
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse token: %w", err)
 	}
+
 	return token, nil
 }
 
@@ -74,43 +78,8 @@ func (r *Token) Claims() *Claims {
 			return claims
 		}
 	}
+
 	return nil
-}
-
-// Renew updates the token's expiration time based on its type and re-signs it.
-func (r *Token) Renew() error {
-	claims := r.Claims()
-	if claims == nil {
-		return ErrNoClaims
-	}
-
-	claims.RegisteredClaims.ID = uuid.New().String()
-	claims.RegisteredClaims.ExpiresAt = jwt2.NewNumericDate(time.Now().Add(r.TTL()))
-	r.Token = jwt2.NewWithClaims(r.cfg.Signer, claims)
-	return nil
-}
-
-// SignedString returns the signed string representation of the token.
-func (r *Token) SignedString() (string, error) {
-	if r.Token == nil {
-		return "", ErrNoToken
-	}
-	return r.Token.SignedString(r.secret())
-}
-
-func (r *Token) cookieName() string {
-	if r.tokenType == RefreshToken {
-		return r.cfg.RefreshCookieName
-	}
-	return r.cfg.CookieName
-}
-
-// secret returns the secret for the token.
-func (r *Token) secret() []byte {
-	if r.tokenType == RefreshToken {
-		return r.cfg.RefreshSecret.Bytes()
-	}
-	return r.cfg.Secret.Bytes()
 }
 
 // Cookie generates an HTTP cookie from the token with specific security constraints.
@@ -143,10 +112,53 @@ func (r *Token) Cookie() (*http.Cookie, error) {
 	}, nil
 }
 
+// Renew updates the token's expiration time based on its type and re-signs it.
+func (r *Token) Renew() error {
+	claims := r.Claims()
+	if claims == nil {
+		return ErrNoClaims
+	}
+
+	claims.RegisteredClaims.ID = uuid.New().String()
+	claims.RegisteredClaims.ExpiresAt = jwt2.NewNumericDate(time.Now().Add(r.TTL()))
+	r.Token = jwt2.NewWithClaims(r.cfg.Signer, claims)
+
+	return nil
+}
+
+// SignedString returns the signed string representation of the token.
+func (r *Token) SignedString() (string, error) {
+	if r.Token == nil {
+		return "", ErrNoToken
+	}
+
+	//nolint:wrapcheck // wrap check is not relevant here.
+	return r.Token.SignedString(r.secret())
+}
+
 // TTL returns the time-to-live duration for the token based on its type.
 func (r *Token) TTL() time.Duration {
 	if r.tokenType == RefreshToken {
 		return r.cfg.RefreshTokenTTL
 	}
+
 	return r.cfg.AccessTokenTTL
+}
+
+// cookieName determines the name of the cookie based on the token type.
+func (r *Token) cookieName() string {
+	if r.tokenType == RefreshToken {
+		return r.cfg.RefreshCookieName
+	}
+
+	return r.cfg.CookieName
+}
+
+// secret returns the secret bytes used for signing the token based on its type.
+func (r *Token) secret() []byte {
+	if r.tokenType == RefreshToken {
+		return r.cfg.RefreshSecret.Bytes()
+	}
+
+	return r.cfg.Secret.Bytes()
 }

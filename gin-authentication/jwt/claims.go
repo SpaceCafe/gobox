@@ -17,18 +17,18 @@ type IdentityClaims struct {
 	// GivenName is the given name(s) or first name(s) of the End-User.
 	// Note that in some cultures, people can have multiple given names;
 	// all can be present, with the names being separated by space characters.
-	GivenName string `json:"given_name,omitempty"`
+	GivenName string `json:"givenName,omitempty"`
 
 	// FamilyName is the surname(s) or last name(s) of the End-User.
 	// Note that in some cultures, people can have multiple family names or no family name;
 	// all can be present, with the names being separated by space characters.
-	FamilyName string `json:"family_name,omitempty"`
+	FamilyName string `json:"familyName,omitempty"`
 
 	// MiddleName is the middle name(s) of the End-User.
 	// Note that in some cultures, people can have multiple middle names;
 	// all can be present, with the names being separated by space characters.
 	// Also note that in some cultures, middle names are not used.
-	MiddleName string `json:"middle_name,omitempty"`
+	MiddleName string `json:"middleName,omitempty"`
 
 	// Nickname is the casual name of the End-User that may or may not be the same as the given_name.
 	// For instance, a nickname value of Mike might be returned alongside a given_name value of Michael.
@@ -37,7 +37,7 @@ type IdentityClaims struct {
 	// PreferredUsername is the shorthand name by which the End-User wishes to be referred to at the RP,
 	// such as janedoe or j.doe. This value MAY be any valid JSON string including special characters
 	// such as @, /, or whitespace. The RP MUST NOT rely upon this value being unique.
-	PreferredUsername string `json:"preferred_username,omitempty"`
+	PreferredUsername string `json:"preferredUsername,omitempty"`
 
 	// Profile is the URL of the End-User's profile page.
 	// The contents of this Web page SHOULD be about the End-User.
@@ -70,7 +70,7 @@ type IdentityClaims struct {
 
 	// ZoneInfo is a string from IANA Time Zone Database representing the End-User's time zone.
 	// For example, Europe/Paris or America/Los_Angeles.
-	ZoneInfo string `json:"zoneinfo,omitempty"`
+	ZoneInfo string `json:"zoneInfo,omitempty"`
 
 	// Locale is the End-User's locale, represented as a BCP47 language tag.
 	// This is typically an ISO 639 Alpha-2 language code in lowercase and an ISO 3166-1 Alpha-2
@@ -79,7 +79,7 @@ type IdentityClaims struct {
 
 	// PhoneNumber is the End-User's preferred telephone number.
 	// E.164 is RECOMMENDED as the format of this Claim, for example, +1 (425) 555-1212 or +56 (2) 687 2400.
-	PhoneNumber string `json:"phone_number,omitempty"`
+	PhoneNumber string `json:"phoneNumber,omitempty"`
 
 	// Address is the End-User's preferred postal address.
 	// The value of the address member is a JSON structure containing some or all of the members
@@ -89,17 +89,17 @@ type IdentityClaims struct {
 	// UpdatedAt is the time the End-User's information was last updated.
 	// Its value is a JSON number representing the number of seconds from 1970-01-01T00:00:00Z
 	// as measured in UTC until the date/time.
-	UpdatedAt int64 `json:"updated_at,omitempty"`
+	UpdatedAt int64 `json:"updatedAt,omitempty"`
 
 	// EmailVerified is true if the End-User's e-mail address has been verified; otherwise false.
 	// When this Claim Value is true, this means that the OP took affirmative steps to ensure
 	// that this e-mail address was controlled by the End-User at the time the verification was performed.
-	EmailVerified bool `json:"email_verified,omitempty"`
+	EmailVerified bool `json:"emailVerified,omitempty"`
 
 	// PhoneNumberVerified is true if the End-User's phone number has been verified; otherwise false.
 	// When this Claim Value is true, this means that the OP took affirmative steps to ensure
 	// that this phone number was controlled by the End-User at the time the verification was performed.
-	PhoneNumberVerified bool `json:"phone_number_verified,omitempty"`
+	PhoneNumberVerified bool `json:"phoneNumberVerified,omitempty"`
 }
 
 // AddressClaim represents the End-User's preferred postal address.
@@ -113,7 +113,7 @@ type AddressClaim struct {
 	// StreetAddress is the full street address component, which MAY include house number,
 	// street name, Post Office Box, and multi-line extended street address information.
 	// This field MAY contain multiple lines, separated by newlines.
-	StreetAddress string `json:"street_address,omitempty"`
+	StreetAddress string `json:"streetAddress,omitempty"`
 
 	// Locality is the city or locality component.
 	Locality string `json:"locality,omitempty"`
@@ -122,7 +122,7 @@ type AddressClaim struct {
 	Region string `json:"region,omitempty"`
 
 	// PostalCode is the zip code or postal code component.
-	PostalCode string `json:"postal_code,omitempty"`
+	PostalCode string `json:"postalCode,omitempty"`
 
 	// Country is the country name component.
 	Country string `json:"country,omitempty"`
@@ -152,7 +152,7 @@ type AuthorizationClaims struct {
 	// being requested or granted.
 	// RFC 9396 Section 9.1
 	// https://www.rfc-editor.org/rfc/rfc9396.html#section-9.1
-	AuthorizationDetails []AuthorizationDetail `json:"authorization_details,omitempty"`
+	AuthorizationDetails []AuthorizationDetail `json:"authorizationDetails,omitempty"`
 }
 
 // AuthorizationDetail represents detailed authorization information as defined in RFC 9396.
@@ -182,6 +182,7 @@ func (r *Claims) CreatedAt() time.Time {
 	if r.IssuedAt == nil {
 		return time.Time{}
 	}
+
 	return r.IssuedAt.Time
 }
 
@@ -197,6 +198,7 @@ func (r *Claims) ExpiresAt() time.Time {
 	if r.RegisteredClaims.ExpiresAt == nil {
 		return time.Time{}
 	}
+
 	return r.RegisteredClaims.ExpiresAt.Time
 }
 
