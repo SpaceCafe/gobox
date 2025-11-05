@@ -15,16 +15,15 @@ const (
 	ExitCodeSigTerm = 128 + int(syscall.SIGTERM) // equals 143
 )
 
-var (
-	// osExit is a variable for testing purposes.
-	//nolint:gochecknoglobals // This is a mock for os.Exit used in tests to prevent actual program termination
-	osExit = os.Exit
-)
+// OsExit is a variable for testing purposes.
+//
+//nolint:gochecknoglobals // This is a mock for os.Exit used in tests to prevent actual program termination
+var OsExit = os.Exit
 
 // Terminator is a struct that manages context cancellation and synchronization.
 type Terminator struct {
-
 	// ctx is the context for managing cancellation.
+	//nolint:containedctx // Terminator is an extension of context.Context to provide additional functionality.
 	ctx context.Context
 
 	// waitGroup is used to wait for goroutines to finish.
@@ -54,6 +53,7 @@ func New(cfg *Config) *Terminator {
 
 	// Listen to interrupt and termination signals.
 	signal.Notify(terminator.signalCh, os.Interrupt, syscall.SIGTERM)
+
 	go terminator.awaitSignal()
 
 	return terminator
@@ -65,17 +65,16 @@ func (r *Terminator) Context() (ctx context.Context) {
 	return r.ctx
 }
 
-// TrackWithDone returns the context and done function for full goroutine tracking.
-func (r *Terminator) TrackWithDone() (ctx context.Context, doneFn func()) {
+// Go calls the given task in a new goroutine and adds that task to the waitGroup.
+// When the task returns, it's removed from the waitGroup.
+func (r *Terminator) Go(task func()) {
 	r.waitGroup.Add(1)
-	return r.ctx, r.waitGroup.Done
-}
 
-// TrackWithContext returns the context and increments the waitGroup by one.
-// Therefore, the application is terminated after Config.Timeout.
-func (r *Terminator) TrackWithContext() (ctx context.Context) {
-	r.waitGroup.Add(1)
-	return r.ctx
+	go func() {
+		defer r.waitGroup.Done()
+
+		task()
+	}()
 }
 
 // Track increments the waitGroup by one without returning the context.
@@ -84,14 +83,19 @@ func (r *Terminator) Track() {
 	r.waitGroup.Add(1)
 }
 
-// Go calls f in a new goroutine and adds that task to the waitGroup.
-// When f returns, the task is removed from the waitGroup.
-func (r *Terminator) Go(f func()) {
+// TrackWithContext returns the context and increments the waitGroup by one.
+// Therefore, the application is terminated after Config.Timeout.
+func (r *Terminator) TrackWithContext() (ctx context.Context) {
 	r.waitGroup.Add(1)
-	go func() {
-		defer r.waitGroup.Done()
-		f()
-	}()
+
+	return r.ctx
+}
+
+// TrackWithDone returns the context and done function for full goroutine tracking.
+func (r *Terminator) TrackWithDone() (ctx context.Context, doneFn func()) {
+	r.waitGroup.Add(1)
+
+	return r.ctx, r.waitGroup.Done
 }
 
 // Wait blocks until all tracked goroutines have finished.
@@ -118,6 +122,6 @@ func (r *Terminator) awaitSignal() {
 	}
 
 	if r.cfg.Force {
-		osExit(ExitCodeSigTerm)
+		OsExit(ExitCodeSigTerm)
 	}
 }

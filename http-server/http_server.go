@@ -130,7 +130,7 @@ func (r *HTTPServer) Start(ctx context.Context, done func()) error {
 	go func() {
 		<-ctx.Done()
 
-		//nolint:contextcheck // Context is a field of the HTTPServer.
+		//nolint:contextcheck // Context is not needed here.
 		r.Stop()
 	}()
 

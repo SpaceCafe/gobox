@@ -1,4 +1,4 @@
-package terminator
+package terminator_test
 
 import (
 	"context"
@@ -7,54 +7,60 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spacecafe/gobox/terminator"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func SendSigTerm() error {
+func sendSigTerm(t *testing.T) {
+	t.Helper()
+
 	p, err := os.FindProcess(os.Getpid())
-	if err != nil {
-		return err
-	}
-	return p.Signal(syscall.SIGTERM)
+	require.NoError(t, err)
+
+	err = p.Signal(syscall.SIGTERM)
+	require.NoError(t, err)
 }
 
+//nolint:paralleltest // This test is not safe to run in parallel.
 func TestWithoutTracking(t *testing.T) {
 	t.Run("", func(t *testing.T) {
-		_ = New(&Config{
+		_ = terminator.New(&terminator.Config{
 			Timeout: time.Second,
 			Force:   true,
 		})
 
 		// Mock os.Exit to prevent the test from exiting.
 		exitCh := make(chan int)
-		osExit = func(code int) {
+		terminator.OsExit = func(code int) {
 			exitCh <- code
 		}
 
-		_ = SendSigTerm()
+		sendSigTerm(t)
 
 		// Wait for the osExit to be called.
 		select {
 		case code := <-exitCh:
-			assert.Equal(t, code, ExitCodeSigTerm)
+			assert.Equal(t, terminator.ExitCodeSigTerm, code)
 		case <-time.After(4 * time.Second):
-			t.Fatal("Timeout waiting for osExit to be called")
+			t.Fatal("Timeout waiting for os.Exit to be called")
 		}
 	})
 }
 
+//nolint:paralleltest // This test is not safe to run in parallel.
 func TestWithTracking(t *testing.T) {
-	cfg := &Config{}
+	cfg := &terminator.Config{}
 	cfg.SetDefaults()
 	t.Run("", func(t *testing.T) {
-		terminator := New(&Config{
+		term := terminator.New(&terminator.Config{
 			Timeout: time.Second,
 			Force:   true,
 		})
 
 		// Mock os.Exit to prevent the test from exiting.
 		exitCh := make(chan int)
-		osExit = func(code int) {
+		terminator.OsExit = func(code int) {
 			exitCh <- code
 		}
 
@@ -62,16 +68,16 @@ func TestWithTracking(t *testing.T) {
 			<-ctx.Done()
 			<-time.After(time.Second)
 			done()
-		}(terminator.TrackWithDone())
+		}(term.TrackWithDone())
 
-		_ = SendSigTerm()
+		sendSigTerm(t)
 
-		// Wait for the osExit to be called.
+		// Wait for the os.Exit to be called.
 		select {
 		case code := <-exitCh:
-			assert.Equal(t, code, ExitCodeSigTerm)
+			assert.Equal(t, terminator.ExitCodeSigTerm, code)
 		case <-time.After(4 * time.Second):
-			t.Fatal("Timeout waiting for osExit to be called")
+			t.Fatal("Timeout waiting for os.Exit to be called")
 		}
 	})
 }
