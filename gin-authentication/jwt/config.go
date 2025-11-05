@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"net/http"
 	"regexp"
 	"time"
 
@@ -35,6 +36,9 @@ type Config struct {
 	// CookieName is the name of the cookie that stores the access token.
 	CookieName string `json:"cookie_name" yaml:"cookie_name" mapstructure:"cookie_name"`
 
+	// CookieSameSite is the same site attribute of the cookie. Possible values are "Strict", "Lax" or "None".
+	CookieSameSite CookieSameSite `json:"cookie_same_site" yaml:"cookie_same_site" mapstructure:"cookie_same_site"`
+
 	// RefreshCookieName is the name of the cookie that stores the refresh token.
 	RefreshCookieName string `json:"refresh_cookie_name" yaml:"refresh_cookie_name" mapstructure:"refresh_cookie_name"`
 
@@ -51,6 +55,7 @@ type Config struct {
 // SetDefaults initializes the default values for the relevant fields in the struct.
 func (r *Config) SetDefaults() {
 	r.CookieName = "__Host-access_token"
+	r.CookieSameSite = CookieSameSite{http.SameSiteStrictMode}
 	r.RefreshCookieName = "__Host-refresh_token"
 	r.Signer = jwt2.SigningMethodHS256
 	r.AccessTokenTTL = time.Hour * 15  //nolint:mnd // Default access token expiration time
@@ -84,6 +89,10 @@ func (r *Config) Validate() error {
 
 	if r.CookieName == "" || !cookieNameValidator.MatchString(r.CookieName) {
 		return ErrInvalidCookieName
+	}
+
+	if r.CookieSameSite.SameSite < http.SameSiteLaxMode {
+		return ErrInvalidCookieSameSite
 	}
 
 	if r.RefreshCookieName == "" || !cookieNameValidator.MatchString(r.RefreshCookieName) {

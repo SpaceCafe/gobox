@@ -1,6 +1,8 @@
 package jwt
 
 import (
+	"net/http"
+	"net/url"
 	"time"
 
 	jwt2 "github.com/golang-jwt/jwt/v5"
@@ -79,7 +81,7 @@ func (r *Token) Claims() *Claims {
 func (r *Token) Renew() error {
 	claims := r.Claims()
 	if claims == nil {
-		return ErrClaimsIsNil
+		return ErrNoClaims
 	}
 
 	claims.RegisteredClaims.ID = uuid.New().String()
@@ -91,9 +93,16 @@ func (r *Token) Renew() error {
 // SignedString returns the signed string representation of the token.
 func (r *Token) SignedString() (string, error) {
 	if r.Token == nil {
-		return "", ErrTokenIsNil
+		return "", ErrNoToken
 	}
 	return r.Token.SignedString(r.secret())
+}
+
+func (r *Token) cookieName() string {
+	if r.tokenType == RefreshToken {
+		return r.cfg.RefreshCookieName
+	}
+	return r.cfg.CookieName
 }
 
 // secret returns the secret for the token.
@@ -102,6 +111,36 @@ func (r *Token) secret() []byte {
 		return r.cfg.RefreshSecret.Bytes()
 	}
 	return r.cfg.Secret.Bytes()
+}
+
+// Cookie generates an HTTP cookie from the token with specific security constraints.
+func (r *Token) Cookie() (*http.Cookie, error) {
+	claims := r.Claims()
+	if claims == nil {
+		return nil, ErrNoClaims
+	}
+
+	value, err := r.SignedString()
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the cookie with the following constraints:
+	// - `Domain` is not set, so the cookie is a host-only cookie.
+	// - `Expires` is not set, so the cookie is a session cookie.
+	// - `Secure` is set, so the cookie is only sent over HTTPS.
+	// - `HttpOnly` is set, so the cookie is inaccessible to client-side JavaScript.
+	// - `Partitioned` is set, so the cookie is sent in a separate cookie jar.
+	return &http.Cookie{
+		Name:        r.cookieName(),
+		Value:       url.QueryEscape(value),
+		Path:        "/",
+		MaxAge:      int(claims.ExpiresAt().Unix() - time.Now().Unix()),
+		Secure:      true,
+		HttpOnly:    true,
+		SameSite:    r.cfg.CookieSameSite.SameSite,
+		Partitioned: true,
+	}, nil
 }
 
 // TTL returns the time-to-live duration for the token based on its type.
